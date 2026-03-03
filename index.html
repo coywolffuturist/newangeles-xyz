@@ -7,34 +7,93 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
-    canvas { display: block; width: 100vw; height: 100vh; }
+
+    #stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* The logo layers — stacked via absolute positioning */
+    .logo-layer {
+      position: absolute;
+      top: 50%;
+      left: 7%;
+      transform: translateY(-50%);
+      width: 86%;
+      height: auto;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Reveal clip applied via JS */
+    #clip-wrapper {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+    }
+
+    /* Glow layers */
+    #glow-outer {
+      filter: blur(28px) brightness(3) saturate(2);
+      opacity: 0.5;
+    }
+    #glow-mid {
+      filter: blur(10px) brightness(4) saturate(2);
+      opacity: 0.6;
+    }
+    #glow-inner {
+      filter: blur(3px) brightness(5) saturate(1.5);
+      opacity: 0.8;
+    }
+    #glow-core {
+      filter: brightness(2) saturate(1.2);
+      opacity: 1.0;
+    }
+
+    #sparkle-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* SVG defs for clip path */
+    #svg-defs { position: absolute; width: 0; height: 0; }
   </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<div id="stage">
+  <!-- Glow layers stacked, each clipped by clip-wrapper -->
+  <div id="clip-wrapper">
+    <img id="glow-outer" class="logo-layer" src="NewAngeles-02.png" alt="">
+    <img id="glow-mid"   class="logo-layer" src="NewAngeles-02.png" alt="">
+    <img id="glow-inner" class="logo-layer" src="NewAngeles-02.png" alt="">
+    <img id="glow-core"  class="logo-layer" src="NewAngeles-02.png" alt="">
+  </div>
+  <canvas id="sparkle-canvas"></canvas>
+</div>
+
 <script>
-var canvas = document.getElementById('c');
-var ctx = canvas.getContext('2d');
+var stage     = document.getElementById('stage');
+var wrapper   = document.getElementById('clip-wrapper');
+var sparkCvs  = document.getElementById('sparkle-canvas');
+var sctx      = sparkCvs.getContext('2d');
 
 function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  sparkCvs.width  = window.innerWidth;
+  sparkCvs.height = window.innerHeight;
 }
 resize();
 window.addEventListener('resize', resize);
 
-var logo = new Image();
-logo.src = 'NewAngeles-02.png';
+// Wait for first image to load to get layout
+var logoImg = document.getElementById('glow-core');
 
-function getLayout() {
-  var W = canvas.width, H = canvas.height;
-  var padX = W * 0.07;
-  var aspect = logo.naturalWidth && logo.naturalHeight ? logo.naturalWidth/logo.naturalHeight : 640/360;
-  var drawW = W - padX*2;
-  var drawH = drawW/aspect;
-  var drawX = padX;
-  var drawY = (H-drawH)/2;
-  return {W:W,H:H,drawX:drawX,drawY:drawY,drawW:drawW,drawH:drawH};
+function getLogoRect() {
+  var r = logoImg.getBoundingClientRect();
+  return { x: r.left, y: r.top, w: r.width, h: r.height };
 }
 
 // ── Sparks ─────────────────────────────────────────────────────────────────
@@ -46,152 +105,127 @@ function spawnSparks(x, y, n, burst) {
       vx:(Math.random()-0.5)*(burst?7:3),
       vy:-(Math.random()*(burst?7:4)+0.5),
       life:1,
-      decay:0.01+Math.random()*0.017,
-      r:burst?(3+Math.random()*5):(1.2+Math.random()*2.8),
-      hue:195+Math.random()*50
+      decay:0.011+Math.random()*0.018,
+      r:burst?(3+Math.random()*5):(1.2+Math.random()*3),
+      hue:195+Math.random()*55
     });
   }
   while(sparks.length>700) sparks.shift();
 }
 
 function tickSparks() {
+  sctx.clearRect(0, 0, sparkCvs.width, sparkCvs.height);
   for (var i=sparks.length-1; i>=0; i--) {
     var s=sparks[i];
     s.x+=s.vx; s.y+=s.vy; s.vy+=0.08;
     s.life-=s.decay;
     if(s.life<=0){sparks.splice(i,1);continue;}
     var r=Math.max(0.5,s.r*s.life);
-    ctx.save();
-    ctx.globalAlpha=s.life;
-    ctx.shadowBlur=r>2?20:10;
-    ctx.shadowColor='hsl('+s.hue+',100%,85%)';
-    ctx.fillStyle='hsl('+s.hue+',100%,'+(50+s.life*50)+'%)';
+    sctx.save();
+    sctx.globalAlpha=s.life;
+    sctx.shadowBlur=r>2?22:12;
+    sctx.shadowColor='hsl('+s.hue+',100%,85%)';
+    sctx.fillStyle='hsl('+s.hue+',100%,'+(50+s.life*50)+'%)';
     if(r>2.5){
-      // 4-point star
-      ctx.beginPath();
+      sctx.beginPath();
       for(var p=0;p<8;p++){
         var a=p*Math.PI/4;
         var rr=(p%2===0)?r:r*0.3;
-        p===0?ctx.moveTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr):ctx.lineTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr);
+        p===0?sctx.moveTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr):sctx.lineTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr);
       }
-      ctx.closePath();ctx.fill();
+      sctx.closePath();sctx.fill();
     } else {
-      ctx.beginPath();ctx.arc(s.x,s.y,r,0,Math.PI*2);ctx.fill();
+      sctx.beginPath();sctx.arc(s.x,s.y,r,0,Math.PI*2);sctx.fill();
     }
-    ctx.restore();
+    sctx.restore();
   }
-}
-
-// ── Neon: draw logo with stacked shadow passes ─────────────────────────────
-// Key insight: each drawImage call with shadowBlur adds a glow layer.
-// Stack many passes with high shadowBlur to simulate thick neon tube.
-function drawNeon(fraction, alpha) {
-  var l = getLayout();
-  var clipW = fraction * l.drawW;
-  if (clipW <= 0) return;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(l.drawX, 0, clipW, l.H);
-  ctx.clip();
-
-  var passes = [
-    // [shadowBlur, shadowColor, globalAlpha]
-    [120, '#001166', 0.20],
-    [80,  '#0022aa', 0.28],
-    [55,  '#0033dd', 0.35],
-    [35,  '#1144ff', 0.45],
-    [20,  '#2255ff', 0.55],
-    [12,  '#3366ff', 0.70],
-    [6,   '#5588ff', 0.88],
-    [3,   '#88aaff', 1.00],
-    [1,   '#ccddff', 1.00],
-  ];
-
-  for (var i=0; i<passes.length; i++) {
-    var p = passes[i];
-    ctx.save();
-    ctx.shadowBlur   = p[0];
-    ctx.shadowColor  = p[1];
-    ctx.globalAlpha  = alpha * p[2];
-    ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
-    ctx.restore();
-  }
-
-  ctx.restore();
 }
 
 // ── Animation ──────────────────────────────────────────────────────────────
 var T_WRITE=3000, T_SHINE_END=T_WRITE+1000;
-var t0=null, prevRX=-1, lastTwinkle=0;
+var t0=null, lastTwinkle=0, prevRX=-1;
 function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}
+
+// Clip the wrapper to revealX (in viewport px)
+function setReveal(fraction) {
+  var lr = getLogoRect();
+  var revealPx = lr.x + fraction * lr.w;
+  // Clip the entire wrapper to left of revealPx
+  wrapper.style.clipPath = 'inset(0 '+(sparkCvs.width - revealPx)+'px 0 0)';
+}
+
+function setOpacity(alpha) {
+  var gOuter = document.getElementById('glow-outer');
+  var gMid   = document.getElementById('glow-mid');
+  var gInner = document.getElementById('glow-inner');
+  var gCore  = document.getElementById('glow-core');
+  gOuter.style.opacity = (0.5 * alpha).toFixed(3);
+  gMid.style.opacity   = (0.6 * alpha).toFixed(3);
+  gInner.style.opacity = (0.8 * alpha).toFixed(3);
+  gCore.style.opacity  = (1.0 * alpha).toFixed(3);
+}
+
+// Shine overlay
+var shineDiv = document.createElement('div');
+shineDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;mix-blend-mode:screen;';
+stage.appendChild(shineDiv);
+
+function setShine(x) {
+  if (x < 0) { shineDiv.style.opacity = '0'; return; }
+  shineDiv.style.opacity = '1';
+  shineDiv.style.background = 'linear-gradient(to right, rgba(255,255,255,0) '+(x-8)+'%, rgba(255,255,255,0.55) '+x+'%, rgba(255,255,255,0) '+(x+8)+'%)';
+}
 
 function frame(ts) {
   requestAnimationFrame(frame);
-  if (!logo.complete || !logo.naturalWidth) return;
-  var l=getLayout();
-  if (!t0) t0=ts;
-  var el=ts-t0;
+  if (!logoImg.complete || !logoImg.naturalWidth) return;
 
-  ctx.fillStyle='#000';
-  ctx.fillRect(0,0,l.W,l.H);
-
-  // Scanline
-  if (Math.random()<0.02) {
-    ctx.save();
-    ctx.globalAlpha=0.03+Math.random()*0.05;
-    ctx.fillStyle='#1133ff';
-    ctx.fillRect(0,Math.random()*l.H,l.W,1);
-    ctx.restore();
-  }
-
-  if (el < T_WRITE) {
-    var t=ease(el/T_WRITE);
-    drawNeon(t, 1.0);
-    var rx=l.drawX+t*l.drawW;
-    if (rx-prevRX>3) {
-      spawnSparks(rx, l.drawY+l.drawH*(0.2+Math.random()*0.6), 3+Math.floor(Math.random()*5), false);
-      prevRX=rx;
-    }
-  } else if (el < T_SHINE_END) {
-    drawNeon(1.0, 1.0);
-    var st=(el-T_WRITE)/(T_SHINE_END-T_WRITE);
-    var sx=l.drawX-130+st*(l.drawW+300);
-    var g=ctx.createLinearGradient(sx-100,0,sx+100,0);
-    g.addColorStop(0,'rgba(255,255,255,0)');
-    g.addColorStop(0.35,'rgba(180,210,255,0.28)');
-    g.addColorStop(0.5,'rgba(255,255,255,0.65)');
-    g.addColorStop(0.65,'rgba(180,210,255,0.28)');
-    g.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.save();
-    ctx.globalCompositeOperation='screen';
-    ctx.fillStyle=g;
-    ctx.fillRect(0,0,l.W,l.H);
-    ctx.restore();
-    if (Math.random()<0.55) {
-      spawnSparks(l.drawX+Math.random()*l.drawW,l.drawY+l.drawH*(0.1+Math.random()*0.8),2+Math.floor(Math.random()*5),Math.random()<0.35);
-    }
-  } else {
-    var idle=el-T_SHINE_END;
-    // Occasional rapid neon stutter
-    var flicker=1.0;
-    if (Math.random()<0.004) flicker=0.5+Math.random()*0.4;
-    var pulse=(0.80+0.20*Math.sin(idle*0.0018))*flicker;
-    drawNeon(1.0, pulse);
-    if (ts-lastTwinkle > 70+Math.random()*230) {
-      lastTwinkle=ts;
-      spawnSparks(l.drawX+l.drawW*(0.05+Math.random()*0.9),l.drawY+l.drawH*(0.1+Math.random()*0.8),1+(Math.random()<0.22?5:0),Math.random()<0.18);
-    }
-    // Neon blackout buzz
-    if (Math.random()<0.002) {
-      ctx.save();ctx.globalAlpha=0.15;ctx.fillStyle='#000';ctx.fillRect(0,0,l.W,l.H);ctx.restore();
-    }
-  }
+  var lr = getLogoRect();
+  if (lr.w === 0) return;
+  if (!t0) t0 = ts;
+  var el = ts - t0;
 
   tickSparks();
+
+  if (el < T_WRITE) {
+    var t = ease(el / T_WRITE);
+    setReveal(t);
+    setOpacity(1.0);
+    setShine(-1);
+
+    var rx = lr.x + t * lr.w;
+    if (rx - prevRX > 3) {
+      spawnSparks(rx, lr.y + lr.h*(0.2+Math.random()*0.6), 3+Math.floor(Math.random()*5), false);
+      prevRX = rx;
+    }
+
+  } else if (el < T_SHINE_END) {
+    setReveal(1.0);
+    setOpacity(1.0);
+    var st = (el-T_WRITE)/(T_SHINE_END-T_WRITE);
+    setShine(Math.round((lr.x/sparkCvs.width*100) + st*((lr.w)/sparkCvs.width*100 + 15)));
+    if (Math.random()<0.55) {
+      spawnSparks(lr.x+Math.random()*lr.w, lr.y+lr.h*(0.1+Math.random()*0.8), 2+Math.floor(Math.random()*5), Math.random()<0.35);
+    }
+
+  } else {
+    setReveal(1.0);
+    setShine(-1);
+    var idle = el - T_SHINE_END;
+    var flicker = Math.random()<0.004 ? (0.55+Math.random()*0.35) : 1.0;
+    var pulse = (0.78 + 0.22*Math.sin(idle*0.0018)) * flicker;
+    setOpacity(pulse);
+    if (ts-lastTwinkle > 70+Math.random()*230) {
+      lastTwinkle = ts;
+      spawnSparks(lr.x+lr.w*(0.05+Math.random()*0.9), lr.y+lr.h*(0.1+Math.random()*0.8), 1+(Math.random()<0.22?5:0), Math.random()<0.18);
+    }
+  }
 }
 
-requestAnimationFrame(frame);
+window.addEventListener('load', function() {
+  wrapper.style.clipPath = 'inset(0 100% 0 0)';
+  requestAnimationFrame(frame);
+});
 </script>
 </body>
 </html>
