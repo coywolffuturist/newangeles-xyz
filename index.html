@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Angeles</title>
+  <link rel="icon" type="image/png" href="NewAngeles-04.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #2B5BF5;
+      --black: #080808;
+      --off-white: #F2F0EC;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--black);
+      color: var(--off-white);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle radial glow */
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(43, 91, 245, 0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+      padding: 40px 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-wrap {
+      width: min(540px, 85vw);
+      animation: fadeUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .logo-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .tagline {
+      font-size: clamp(13px, 2vw, 16px);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(242, 240, 236, 0.45);
+      animation: fadeUp 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+    }
+
+    .cta-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      animation: fadeUp 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+    }
+
+    .email-form {
+      display: flex;
+      gap: 0;
+      width: min(420px, 90vw);
+      border: 1px solid rgba(43, 91, 245, 0.4);
+      border-radius: 4px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .email-form:focus-within {
+      border-color: var(--blue);
+    }
+
+    .email-form input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: none;
+      outline: none;
+      padding: 14px 18px;
+      font-size: 14px;
+      color: var(--off-white);
+      font-family: inherit;
+    }
+
+    .email-form input::placeholder {
+      color: rgba(242, 240, 236, 0.3);
+    }
+
+    .email-form button {
+      background: var(--blue);
+      border: none;
+      padding: 14px 22px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .email-form button:hover {
+      background: #1a46d4;
+    }
+
+    .note {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(242, 240, 236, 0.25);
+    }
+
+    /* Decorative corner lines */
+    .corner {
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      opacity: 0.2;
+    }
+    .corner--tl { top: 24px; left: 24px; border-top: 1px solid var(--blue); border-left: 1px solid var(--blue); }
+    .corner--tr { top: 24px; right: 24px; border-top: 1px solid var(--blue); border-right: 1px solid var(--blue); }
+    .corner--bl { bottom: 24px; left: 24px; border-bottom: 1px solid var(--blue); border-left: 1px solid var(--blue); }
+    .corner--br { bottom: 24px; right: 24px; border-bottom: 1px solid var(--blue); border-right: 1px solid var(--blue); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .email-form { flex-direction: column; }
+      .email-form button { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="corner corner--tl"></div>
+  <div class="corner corner--tr"></div>
+  <div class="corner corner--bl"></div>
+  <div class="corner corner--br"></div>
+
+  <div class="container">
+    <div class="logo-wrap">
+      <img src="NewAngeles-02.png" alt="New Angeles" />
+    </div>
+
+    <p class="tagline">Something is coming</p>
+
+    <div class="cta-wrap">
+      <form class="email-form" onsubmit="handleSubmit(event)">
+        <input type="email" placeholder="your@email.com" required autocomplete="email" />
+        <button type="submit">Notify me</button>
+      </form>
+      <span class="note">Be the first to know</span>
+    </div>
+  </div>
+
+  <script>
+    function handleSubmit(e) {
+      e.preventDefault();
+      const input = e.target.querySelector('input');
+      const btn = e.target.querySelector('button');
+      btn.textContent = '✓ You\'re in';
+      btn.style.background = '#1a8a5a';
+      input.disabled = true;
+      btn.disabled = true;
+    }
+  </script>
+
+</body>
+</html>
