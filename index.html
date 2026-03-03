@@ -7,12 +7,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
-
-    #stage {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-    }
+    #stage { position: relative; width: 100vw; height: 100vh; }
 
     .logo-layer {
       position: absolute;
@@ -25,51 +20,27 @@
       pointer-events: none;
     }
 
-    /* Each layer is the WHITE-on-black version, colorized with CSS */
-
-    /* Outermost haze — wide blue fog */
-    #gl1 {
-      filter: blur(60px) invert(1) brightness(0.6)
-              sepia(1) saturate(8) hue-rotate(195deg);
-      opacity: 0.7;
-      mix-blend-mode: screen;
-    }
-    /* Mid glow */
-    #gl2 {
-      filter: blur(28px) invert(1) brightness(0.9)
-              sepia(1) saturate(10) hue-rotate(200deg);
-      opacity: 0.75;
-      mix-blend-mode: screen;
-    }
-    /* Tight corona */
-    #gl3 {
-      filter: blur(10px) invert(1) brightness(1.2)
-              sepia(1) saturate(12) hue-rotate(205deg);
-      opacity: 0.85;
-      mix-blend-mode: screen;
-    }
-    /* Hot inner core — near-white center */
-    #gl4 {
-      filter: blur(3px) invert(1) brightness(1.5)
-              sepia(1) saturate(6) hue-rotate(210deg);
-      opacity: 0.95;
-      mix-blend-mode: screen;
-    }
-    /* Crisp surface — very slight blue tint */
-    #gl5 {
-      filter: invert(1) brightness(1.0)
-              sepia(1) saturate(3) hue-rotate(210deg);
-      opacity: 1.0;
-      mix-blend-mode: screen;
-    }
-
     #clip-wrapper {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
     }
 
-    #sparkle-canvas {
+    /* Glow layers — white-on-black source, colorized neon blue via CSS */
+    #gl1 { filter: blur(55px) invert(1) brightness(0.55) sepia(1) saturate(10) hue-rotate(195deg); opacity: 0.65; mix-blend-mode: screen; }
+    #gl2 { filter: blur(26px) invert(1) brightness(0.85) sepia(1) saturate(12) hue-rotate(200deg); opacity: 0.75; mix-blend-mode: screen; }
+    #gl3 { filter: blur(9px)  invert(1) brightness(1.1)  sepia(1) saturate(14) hue-rotate(205deg); opacity: 0.88; mix-blend-mode: screen; }
+    #gl4 { filter: blur(2px)  invert(1) brightness(1.4)  sepia(1) saturate(8)  hue-rotate(210deg); opacity: 0.95; mix-blend-mode: screen; }
+    /* Crisp surface */
+    #gl5 { filter: invert(1) brightness(1.0) sepia(1) saturate(4) hue-rotate(210deg); opacity: 1.0; mix-blend-mode: screen; }
+    /* Outline layer — very thin white with electric blue tint */
+    #gl6 { filter: invert(1) brightness(2.5) sepia(1) saturate(15) hue-rotate(200deg) contrast(3); opacity: 0.55; mix-blend-mode: screen; }
+
+    /* The two-word clip wrappers sit inside clip-wrapper */
+    #word-new { position:absolute; top:0; left:0; width:100%; height:100%; }
+    #word-ang { position:absolute; top:0; left:0; width:100%; height:100%; }
+
+    canvas#overlay {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -80,158 +51,201 @@
 <body>
 <div id="stage">
   <div id="clip-wrapper">
-    <!-- All layers use white-on-black source (05) for CSS glow to work -->
-    <img id="gl1" class="logo-layer" src="NewAngeles-05.png" alt="">
-    <img id="gl2" class="logo-layer" src="NewAngeles-05.png" alt="">
-    <img id="gl3" class="logo-layer" src="NewAngeles-05.png" alt="">
-    <img id="gl4" class="logo-layer" src="NewAngeles-05.png" alt="">
-    <img id="gl5" class="logo-layer" src="NewAngeles-05.png" alt="">
+    <!-- "New" word — clips to left 59% of logo -->
+    <div id="word-new">
+      <img id="gl1a" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl2a" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl3a" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl4a" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl5a" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl6a" class="logo-layer" src="NewAngeles-05.png" alt="">
+    </div>
+    <!-- "Angeles" word — clips to right 41% of logo -->
+    <div id="word-ang">
+      <img id="gl1b" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl2b" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl3b" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl4b" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl5b" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img id="gl6b" class="logo-layer" src="NewAngeles-05.png" alt="">
+    </div>
   </div>
-  <canvas id="sparkle-canvas"></canvas>
+  <canvas id="overlay"></canvas>
 </div>
 
 <script>
-var stage    = document.getElementById('stage');
-var wrapper  = document.getElementById('clip-wrapper');
-var sparkCvs = document.getElementById('sparkle-canvas');
-var sctx     = sparkCvs.getContext('2d');
+var stage   = document.getElementById('stage');
+var wordNew = document.getElementById('word-new');
+var wordAng = document.getElementById('word-ang');
+var cvs     = document.getElementById('overlay');
+var ctx     = cvs.getContext('2d');
+
+// Logo layout constants
+var LOGO_LEFT  = 0.07;   // 7% from left
+var LOGO_WIDTH = 0.86;   // 86% wide
+var WORD_SPLIT = 0.59;   // "New" ends at 59% of logo width
+
+// Glow base opacities per layer
+var BASE_OP = [0.65, 0.75, 0.88, 0.95, 1.0, 0.55];
 
 function resize() {
-  sparkCvs.width  = window.innerWidth;
-  sparkCvs.height = window.innerHeight;
+  cvs.width  = window.innerWidth;
+  cvs.height = window.innerHeight;
 }
 resize();
 window.addEventListener('resize', resize);
 
-var refImg = document.getElementById('gl5');
-
-function getLR() {
-  var r = refImg.getBoundingClientRect();
-  return { x:r.left, y:r.top, w:r.width, h:r.height };
+// Get absolute pixel x for a fractional position within the logo
+function logoX(frac) {
+  return (LOGO_LEFT + frac * LOGO_WIDTH) * window.innerWidth;
 }
 
-// ── Sparks ─────────────────────────────────────────────────────────────────
-var sparks = [];
-function spawnSparks(x, y, n, burst) {
-  for (var i=0; i<n; i++) {
-    sparks.push({
-      x:x, y:y,
-      vx:(Math.random()-0.5)*(burst?8:3.5),
-      vy:-(Math.random()*(burst?8:4.5)+0.5),
-      life:1,
-      decay:0.01+Math.random()*0.017,
-      r:burst?(3+Math.random()*5.5):(1.5+Math.random()*3),
-      hue:195+Math.random()*60
-    });
-  }
-  while(sparks.length>700) sparks.shift();
+// ── Clip helpers ─────────────────────────────────────────────────────────
+// revealFrac: 0..1 within the given word's portion
+function clipWord(el, wordStartFrac, wordEndFrac, revealFrac) {
+  var W = window.innerWidth;
+  // Absolute reveal x
+  var startPx = logoX(wordStartFrac);
+  var endPx   = logoX(wordEndFrac);
+  var revealPx = startPx + revealFrac * (endPx - startPx);
+  // Clip: show nothing left of startPx, reveal up to revealPx, hide right of endPx
+  var rightClip = Math.max(0, W - revealPx);
+  var leftClip  = startPx;
+  el.style.clipPath = 'inset(0 ' + rightClip.toFixed(1) + 'px 0 ' + leftClip.toFixed(1) + 'px)';
 }
 
-function tickSparks() {
-  sctx.clearRect(0,0,sparkCvs.width,sparkCvs.height);
-  for (var i=sparks.length-1; i>=0; i--) {
-    var s=sparks[i];
-    s.x+=s.vx; s.y+=s.vy; s.vy+=0.08;
-    s.life-=s.decay;
-    if(s.life<=0){sparks.splice(i,1);continue;}
-    var r=Math.max(0.5,s.r*s.life);
-    sctx.save();
-    sctx.globalAlpha=s.life;
-    sctx.shadowBlur=r>2?24:12;
-    sctx.shadowColor='hsl('+s.hue+',100%,88%)';
-    sctx.fillStyle='hsl('+s.hue+',100%,'+(50+s.life*50)+'%)';
-    if(r>2.5){
-      sctx.beginPath();
-      for(var p=0;p<8;p++){
-        var a=p*Math.PI/4, rr=(p%2===0)?r:r*0.28;
-        p===0?sctx.moveTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr):sctx.lineTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr);
-      }
-      sctx.closePath();sctx.fill();
-    } else {
-      sctx.beginPath();sctx.arc(s.x,s.y,r,0,Math.PI*2);sctx.fill();
-    }
-    sctx.restore();
+function setWordOpacity(suffix, alpha) {
+  var ids = ['gl1','gl2','gl3','gl4','gl5','gl6'];
+  for (var i=0; i<ids.length; i++) {
+    var el = document.getElementById(ids[i]+suffix);
+    if (el) el.style.opacity = (BASE_OP[i] * alpha).toFixed(3);
   }
 }
 
-// ── Reveal + opacity ───────────────────────────────────────────────────────
-function setReveal(fraction) {
-  var lr = getLR();
-  var revealPx = lr.x + fraction * lr.w;
-  var rightClip = Math.max(0, sparkCvs.width - revealPx);
-  wrapper.style.clipPath = 'inset(0 '+rightClip+'px 0 0)';
+// ── Electricity flash ─────────────────────────────────────────────────────
+// A bright pulse that races across the word as it "charges up"
+var flash = { active: false, x: 0, targetX: 0, alpha: 0 };
+
+function drawFlash(x, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  var grad = ctx.createLinearGradient(x - 60, 0, x + 20, 0);
+  grad.addColorStop(0, 'rgba(150,200,255,0)');
+  grad.addColorStop(0.6, 'rgba(180,220,255,' + (alpha * 0.5).toFixed(2) + ')');
+  grad.addColorStop(0.85, 'rgba(255,255,255,' + (alpha * 0.9).toFixed(2) + ')');
+  grad.addColorStop(1, 'rgba(220,240,255,' + (alpha * 0.3).toFixed(2) + ')');
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+  ctx.restore();
 }
 
-var layers = ['gl1','gl2','gl3','gl4','gl5'];
-var baseOp = [0.7, 0.75, 0.85, 0.95, 1.0];
-
-function setOpacity(alpha) {
-  for (var i=0; i<layers.length; i++) {
-    document.getElementById(layers[i]).style.opacity = (baseOp[i] * alpha).toFixed(3);
+// ── Scanline ──────────────────────────────────────────────────────────────
+function maybeScanline() {
+  if (Math.random() < 0.018) {
+    ctx.save();
+    ctx.globalAlpha = 0.03 + Math.random() * 0.05;
+    ctx.fillStyle = '#1133ff';
+    ctx.fillRect(0, Math.random() * cvs.height, cvs.width, 1);
+    ctx.restore();
   }
 }
 
-// Shine overlay div
+// ── Animation ─────────────────────────────────────────────────────────────
+// Phase 1: "New" writes left→right  (0 → T1)
+// Phase 2: "Angeles" writes left→right (T1 → T2)
+// Phase 3: Shine sweep (T2 → T3)
+// Phase 4: Idle breathing
+
+var T1 = 1400;   // "New" finishes
+var T2 = 3200;   // "Angeles" finishes
+var T3 = T2 + 900;
+
+var t0 = null, lastTwinkle = 0;
+function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function easeOut(t) { return 1 - Math.pow(1-t, 2); }
+
+// Shine
 var shineDiv = document.createElement('div');
 shineDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:0;';
 stage.appendChild(shineDiv);
 
 function setShine(frac) {
   if (frac < 0) { shineDiv.style.opacity='0'; return; }
-  var lr = getLR();
-  var px = lr.x + frac * (lr.w + 200) - 100;
-  var pct = (px / sparkCvs.width * 100).toFixed(1);
+  var pct = (LOGO_LEFT * 100 + frac * LOGO_WIDTH * 100).toFixed(1);
   shineDiv.style.opacity = '1';
   shineDiv.style.background =
-    'linear-gradient(to right,rgba(255,255,255,0) '+(parseFloat(pct)-10)+'%,rgba(255,255,255,0.6) '+pct+'%,rgba(255,255,255,0) '+(parseFloat(pct)+10)+'%)';
+    'linear-gradient(to right,rgba(255,255,255,0) '+(parseFloat(pct)-9)+'%,rgba(255,255,255,0.6) '+pct+'%,rgba(255,255,255,0) '+(parseFloat(pct)+9)+'%)';
 }
 
-// ── Animation ──────────────────────────────────────────────────────────────
-var T_WRITE=3000, T_SHINE_END=T_WRITE+1000;
-var t0=null, prevRX=-1, lastTwinkle=0;
-function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}
+var refImg = document.getElementById('gl5a');
 
 function frame(ts) {
   requestAnimationFrame(frame);
   if (!refImg.complete || !refImg.naturalWidth) return;
-  var lr = getLR();
-  if (!lr.w) return;
-  if (!t0) t0=ts;
-  var el=ts-t0;
+  if (!t0) t0 = ts;
+  var el = ts - t0;
 
-  tickSparks();
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  maybeScanline();
 
-  if (el < T_WRITE) {
-    var t=ease(el/T_WRITE);
-    setReveal(t);
-    setOpacity(1.0);
+  if (el < T1) {
+    // ── "New" writing ──
+    var t = ease(el / T1);
+    clipWord(wordNew, 0, WORD_SPLIT, t);
+    setWordOpacity('a', 1.0);
+    // "Angeles" hidden
+    wordAng.style.clipPath = 'inset(0 100% 0 0)';
+    setWordOpacity('b', 0);
+    // Flash at tip
+    drawFlash(logoX(t * WORD_SPLIT), 0.7 + 0.3 * Math.sin(el * 0.05));
     setShine(-1);
-    var rx=lr.x+t*lr.w;
-    if (rx-prevRX>3) {
-      spawnSparks(rx,lr.y+lr.h*(0.2+Math.random()*0.6),3+Math.floor(Math.random()*5),false);
-      prevRX=rx;
-    }
-  } else if (el < T_SHINE_END) {
-    setReveal(1.0);
-    setOpacity(1.0);
-    setShine((el-T_WRITE)/(T_SHINE_END-T_WRITE));
-    if(Math.random()<0.55) spawnSparks(lr.x+Math.random()*lr.w,lr.y+lr.h*(0.1+Math.random()*0.8),2+Math.floor(Math.random()*5),Math.random()<0.35);
+
+  } else if (el < T2) {
+    // ── "Angeles" writing ──
+    // "New" stays fully lit
+    clipWord(wordNew, 0, WORD_SPLIT, 1.0);
+    setWordOpacity('a', 1.0);
+    var t2 = ease((el - T1) / (T2 - T1));
+    clipWord(wordAng, WORD_SPLIT, 1.0, t2);
+    setWordOpacity('b', 1.0);
+    // Flash at tip of Angeles
+    drawFlash(logoX(WORD_SPLIT + t2 * (1.0 - WORD_SPLIT)), 0.7 + 0.3 * Math.sin(el * 0.05));
+    setShine(-1);
+
+  } else if (el < T3) {
+    // ── Shine sweep ──
+    clipWord(wordNew, 0, WORD_SPLIT, 1.0);
+    setWordOpacity('a', 1.0);
+    clipWord(wordAng, WORD_SPLIT, 1.0, 1.0);
+    setWordOpacity('b', 1.0);
+    var st = (el - T2) / (T3 - T2);
+    setShine(easeOut(st));
+
   } else {
-    setReveal(1.0);
+    // ── Idle breathing ──
+    clipWord(wordNew, 0, WORD_SPLIT, 1.0);
+    clipWord(wordAng, WORD_SPLIT, 1.0, 1.0);
     setShine(-1);
-    var idle=el-T_SHINE_END;
-    var flicker=Math.random()<0.005?(0.45+Math.random()*0.4):1.0;
-    var pulse=(0.78+0.22*Math.sin(idle*0.0018))*flicker;
-    setOpacity(pulse);
-    if (ts-lastTwinkle>70+Math.random()*230) {
-      lastTwinkle=ts;
-      spawnSparks(lr.x+lr.w*(0.05+Math.random()*0.9),lr.y+lr.h*(0.1+Math.random()*0.8),1+(Math.random()<0.22?5:0),Math.random()<0.18);
+    var idle = el - T3;
+    var flicker = Math.random() < 0.005 ? (0.45 + Math.random() * 0.4) : 1.0;
+    var pulse = (0.78 + 0.22 * Math.sin(idle * 0.0018)) * flicker;
+    setWordOpacity('a', pulse);
+    setWordOpacity('b', pulse);
+    // Neon blackout buzz
+    if (Math.random() < 0.002) {
+      ctx.save(); ctx.globalAlpha=0.18; ctx.fillStyle='#000';
+      ctx.fillRect(0,0,cvs.width,cvs.height); ctx.restore();
     }
   }
 }
 
 window.addEventListener('load', function() {
-  wrapper.style.clipPath='inset(0 100% 0 0)';
+  // Start hidden
+  wordNew.style.clipPath = 'inset(0 100% 0 0)';
+  wordAng.style.clipPath = 'inset(0 100% 0 0)';
+  setWordOpacity('a', 0);
+  setWordOpacity('b', 0);
   requestAnimationFrame(frame);
 });
 </script>
