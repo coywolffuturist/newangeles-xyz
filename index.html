@@ -20,54 +20,120 @@
       pointer-events: none;
     }
 
-    #clip-wrapper {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+    #clip-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #word-new { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #word-ang { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+    /* ── Glow layers: white-on-black source ── */
+    /* Each layer inverts white→black bg to black, white strokes → colored glow */
+
+    /* Layer 1: wide fog halo */
+    .gl-fog {
+      filter: url(#neon-fog) invert(1);
+      opacity: 0.8;
+      mix-blend-mode: screen;
+    }
+    /* Layer 2: mid corona */
+    .gl-corona {
+      filter: url(#neon-corona) invert(1);
+      opacity: 0.9;
+      mix-blend-mode: screen;
+    }
+    /* Layer 3: tight glow */
+    .gl-glow {
+      filter: url(#neon-glow) invert(1);
+      opacity: 0.95;
+      mix-blend-mode: screen;
+    }
+    /* Layer 4: crisp core */
+    .gl-core {
+      filter: url(#neon-core) invert(1);
+      opacity: 1.0;
+      mix-blend-mode: screen;
+    }
+    /* Layer 5: electric outline — dilated edge, contrasted */
+    .gl-outline {
+      filter: url(#neon-outline) invert(1);
+      opacity: 0.7;
+      mix-blend-mode: screen;
     }
 
-    /* Glow layers — white-on-black source, colorized neon blue via CSS */
-    #gl1 { filter: blur(55px) invert(1) brightness(0.55) sepia(1) saturate(10) hue-rotate(195deg); opacity: 0.65; mix-blend-mode: screen; }
-    #gl2 { filter: blur(26px) invert(1) brightness(0.85) sepia(1) saturate(12) hue-rotate(200deg); opacity: 0.75; mix-blend-mode: screen; }
-    #gl3 { filter: blur(9px)  invert(1) brightness(1.1)  sepia(1) saturate(14) hue-rotate(205deg); opacity: 0.88; mix-blend-mode: screen; }
-    #gl4 { filter: blur(2px)  invert(1) brightness(1.4)  sepia(1) saturate(8)  hue-rotate(210deg); opacity: 0.95; mix-blend-mode: screen; }
-    /* Crisp surface */
-    #gl5 { filter: invert(1) brightness(1.0) sepia(1) saturate(4) hue-rotate(210deg); opacity: 1.0; mix-blend-mode: screen; }
-    /* Outline layer — very thin white with electric blue tint */
-    #gl6 { filter: invert(1) brightness(2.5) sepia(1) saturate(15) hue-rotate(200deg) contrast(3); opacity: 0.55; mix-blend-mode: screen; }
-
-    /* The two-word clip wrappers sit inside clip-wrapper */
-    #word-new { position:absolute; top:0; left:0; width:100%; height:100%; }
-    #word-ang { position:absolute; top:0; left:0; width:100%; height:100%; }
-
     canvas#overlay {
-      position: absolute;
-      top: 0; left: 0;
+      position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
       pointer-events: none;
     }
   </style>
 </head>
 <body>
+
+<!-- SVG filter definitions -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- Neon blue color matrix: turns white into electric blue -->
+    <filter id="neon-fog" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.08
+        0 0 0 0 0.25
+        0 0 0 0 1.0
+        0 0 0 1 0" in="blur"/>
+    </filter>
+
+    <filter id="neon-corona" color-interpolation-filters="sRGB" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.1
+        0 0 0 0 0.35
+        0 0 0 0 1.0
+        0 0 0 1 0" in="blur"/>
+    </filter>
+
+    <filter id="neon-glow" color-interpolation-filters="sRGB" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.2
+        0 0 0 0 0.5
+        0 0 0 0 1.0
+        0 0 0 1 0" in="blur"/>
+    </filter>
+
+    <filter id="neon-core" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.4
+        0 0 0 0 0.65
+        0 0 0 0 1.0
+        0 0 0 1 0"/>
+    </filter>
+
+    <!-- Outline: dilate + sharp blue edge -->
+    <filter id="neon-outline" color-interpolation-filters="sRGB" x="-10%" y="-10%" width="120%" height="120%">
+      <feMorphology operator="dilate" radius="1.5" result="dilated"/>
+      <feGaussianBlur stdDeviation="0.8" result="blurred" in="dilated"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.05
+        0 0 0 0 0.5
+        0 0 0 0 1.0
+        0 0 0 4 -1" in="blurred"/>
+    </filter>
+  </defs>
+</svg>
+
 <div id="stage">
   <div id="clip-wrapper">
-    <!-- "New" word — clips to left 59% of logo -->
     <div id="word-new">
-      <img id="gl1a" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl2a" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl3a" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl4a" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl5a" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl6a" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
     </div>
-    <!-- "Angeles" word — clips to right 41% of logo -->
     <div id="word-ang">
-      <img id="gl1b" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl2b" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl3b" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl4b" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl5b" class="logo-layer" src="NewAngeles-05.png" alt="">
-      <img id="gl6b" class="logo-layer" src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
+      <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
     </div>
   </div>
   <canvas id="overlay"></canvas>
@@ -80,105 +146,69 @@ var wordAng = document.getElementById('word-ang');
 var cvs     = document.getElementById('overlay');
 var ctx     = cvs.getContext('2d');
 
-// Logo layout constants
-var LOGO_LEFT  = 0.07;   // 7% from left
-var LOGO_WIDTH = 0.86;   // 86% wide
-var WORD_SPLIT = 0.59;   // "New" ends at 59% of logo width
+var LOGO_LEFT  = 0.07;
+var LOGO_WIDTH = 0.86;
+var WORD_SPLIT = 0.59; // "New" ends at 59% of logo width
 
-// Glow base opacities per layer
-var BASE_OP = [0.65, 0.75, 0.88, 0.95, 1.0, 0.55];
-
-function resize() {
-  cvs.width  = window.innerWidth;
-  cvs.height = window.innerHeight;
-}
+function resize() { cvs.width = window.innerWidth; cvs.height = window.innerHeight; }
 resize();
 window.addEventListener('resize', resize);
 
-// Get absolute pixel x for a fractional position within the logo
-function logoX(frac) {
-  return (LOGO_LEFT + frac * LOGO_WIDTH) * window.innerWidth;
-}
+function logoX(frac) { return (LOGO_LEFT + frac * LOGO_WIDTH) * window.innerWidth; }
 
-// ── Clip helpers ─────────────────────────────────────────────────────────
-// revealFrac: 0..1 within the given word's portion
-function clipWord(el, wordStartFrac, wordEndFrac, revealFrac) {
+function clipWordEl(el, startFrac, endFrac, revealFrac) {
   var W = window.innerWidth;
-  // Absolute reveal x
-  var startPx = logoX(wordStartFrac);
-  var endPx   = logoX(wordEndFrac);
+  var startPx  = logoX(startFrac);
+  var endPx    = logoX(endFrac);
   var revealPx = startPx + revealFrac * (endPx - startPx);
-  // Clip: show nothing left of startPx, reveal up to revealPx, hide right of endPx
-  var rightClip = Math.max(0, W - revealPx);
-  var leftClip  = startPx;
-  el.style.clipPath = 'inset(0 ' + rightClip.toFixed(1) + 'px 0 ' + leftClip.toFixed(1) + 'px)';
+  el.style.clipPath = 'inset(0 ' + Math.max(0, W - revealPx).toFixed(1) + 'px 0 ' + startPx.toFixed(1) + 'px)';
 }
 
-function setWordOpacity(suffix, alpha) {
-  var ids = ['gl1','gl2','gl3','gl4','gl5','gl6'];
-  for (var i=0; i<ids.length; i++) {
-    var el = document.getElementById(ids[i]+suffix);
-    if (el) el.style.opacity = (BASE_OP[i] * alpha).toFixed(3);
+function setWordAlpha(wordEl, alpha) {
+  var imgs = wordEl.querySelectorAll('img');
+  var baseOp = [0.8, 0.9, 0.95, 1.0, 0.7];
+  for (var i = 0; i < imgs.length; i++) {
+    imgs[i].style.opacity = (baseOp[i] * alpha).toFixed(3);
   }
 }
 
-// ── Electricity flash ─────────────────────────────────────────────────────
-// A bright pulse that races across the word as it "charges up"
-var flash = { active: false, x: 0, targetX: 0, alpha: 0 };
-
-function drawFlash(x, alpha) {
-  if (alpha <= 0) return;
+// Electricity flash — bright leading edge
+function drawFlash(x, intensity) {
+  if (intensity <= 0) return;
+  var H = cvs.height;
+  var g = ctx.createLinearGradient(x - 80, 0, x + 15, 0);
+  g.addColorStop(0,    'rgba(100,180,255,0)');
+  g.addColorStop(0.65, 'rgba(150,210,255,' + (intensity * 0.45).toFixed(2) + ')');
+  g.addColorStop(0.88, 'rgba(220,240,255,' + (intensity * 0.85).toFixed(2) + ')');
+  g.addColorStop(1,    'rgba(255,255,255,' + (intensity * 0.95).toFixed(2) + ')');
   ctx.save();
-  var grad = ctx.createLinearGradient(x - 60, 0, x + 20, 0);
-  grad.addColorStop(0, 'rgba(150,200,255,0)');
-  grad.addColorStop(0.6, 'rgba(180,220,255,' + (alpha * 0.5).toFixed(2) + ')');
-  grad.addColorStop(0.85, 'rgba(255,255,255,' + (alpha * 0.9).toFixed(2) + ')');
-  grad.addColorStop(1, 'rgba(220,240,255,' + (alpha * 0.3).toFixed(2) + ')');
   ctx.globalCompositeOperation = 'screen';
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, cvs.width, cvs.height);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, cvs.width, H);
   ctx.restore();
 }
 
-// ── Scanline ──────────────────────────────────────────────────────────────
-function maybeScanline() {
-  if (Math.random() < 0.018) {
-    ctx.save();
-    ctx.globalAlpha = 0.03 + Math.random() * 0.05;
-    ctx.fillStyle = '#1133ff';
-    ctx.fillRect(0, Math.random() * cvs.height, cvs.width, 1);
-    ctx.restore();
-  }
-}
-
-// ── Animation ─────────────────────────────────────────────────────────────
-// Phase 1: "New" writes left→right  (0 → T1)
-// Phase 2: "Angeles" writes left→right (T1 → T2)
-// Phase 3: Shine sweep (T2 → T3)
-// Phase 4: Idle breathing
-
-var T1 = 1400;   // "New" finishes
-var T2 = 3200;   // "Angeles" finishes
-var T3 = T2 + 900;
-
-var t0 = null, lastTwinkle = 0;
-function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-function easeOut(t) { return 1 - Math.pow(1-t, 2); }
-
-// Shine
+// Shine sweep
 var shineDiv = document.createElement('div');
 shineDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:0;';
 stage.appendChild(shineDiv);
 
 function setShine(frac) {
-  if (frac < 0) { shineDiv.style.opacity='0'; return; }
+  if (frac < 0) { shineDiv.style.opacity = '0'; return; }
   var pct = (LOGO_LEFT * 100 + frac * LOGO_WIDTH * 100).toFixed(1);
   shineDiv.style.opacity = '1';
   shineDiv.style.background =
-    'linear-gradient(to right,rgba(255,255,255,0) '+(parseFloat(pct)-9)+'%,rgba(255,255,255,0.6) '+pct+'%,rgba(255,255,255,0) '+(parseFloat(pct)+9)+'%)';
+    'linear-gradient(to right,rgba(255,255,255,0) '+(parseFloat(pct)-10)+'%,'
+    +'rgba(255,255,255,0.65) '+pct+'%,'
+    +'rgba(255,255,255,0) '+(parseFloat(pct)+10)+'%)';
 }
 
-var refImg = document.getElementById('gl5a');
+var T1 = 1500, T2 = 3400, T3 = T2 + 950;
+var t0 = null;
+function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function easeOut(t) { return 1-(1-t)*(1-t); }
+
+var refImg = wordNew.querySelector('img');
 
 function frame(ts) {
   requestAnimationFrame(frame);
@@ -187,65 +217,65 @@ function frame(ts) {
   var el = ts - t0;
 
   ctx.clearRect(0, 0, cvs.width, cvs.height);
-  maybeScanline();
+
+  // Scanline buzz
+  if (Math.random() < 0.018) {
+    ctx.save();
+    ctx.globalAlpha = 0.03 + Math.random() * 0.05;
+    ctx.fillStyle = '#1133ff';
+    ctx.fillRect(0, Math.random() * cvs.height, cvs.width, 1);
+    ctx.restore();
+  }
 
   if (el < T1) {
-    // ── "New" writing ──
+    // "New" writing
     var t = ease(el / T1);
-    clipWord(wordNew, 0, WORD_SPLIT, t);
-    setWordOpacity('a', 1.0);
-    // "Angeles" hidden
+    clipWordEl(wordNew, 0, WORD_SPLIT, t);
+    setWordAlpha(wordNew, 1.0);
     wordAng.style.clipPath = 'inset(0 100% 0 0)';
-    setWordOpacity('b', 0);
-    // Flash at tip
-    drawFlash(logoX(t * WORD_SPLIT), 0.7 + 0.3 * Math.sin(el * 0.05));
+    setWordAlpha(wordAng, 0);
+    drawFlash(logoX(t * WORD_SPLIT), 0.75 + 0.25 * Math.sin(el * 0.06));
     setShine(-1);
 
   } else if (el < T2) {
-    // ── "Angeles" writing ──
-    // "New" stays fully lit
-    clipWord(wordNew, 0, WORD_SPLIT, 1.0);
-    setWordOpacity('a', 1.0);
+    // "Angeles" writing
+    clipWordEl(wordNew, 0, WORD_SPLIT, 1.0);
+    setWordAlpha(wordNew, 1.0);
     var t2 = ease((el - T1) / (T2 - T1));
-    clipWord(wordAng, WORD_SPLIT, 1.0, t2);
-    setWordOpacity('b', 1.0);
-    // Flash at tip of Angeles
-    drawFlash(logoX(WORD_SPLIT + t2 * (1.0 - WORD_SPLIT)), 0.7 + 0.3 * Math.sin(el * 0.05));
+    clipWordEl(wordAng, WORD_SPLIT, 1.0, t2);
+    setWordAlpha(wordAng, 1.0);
+    drawFlash(logoX(WORD_SPLIT + t2 * (1.0 - WORD_SPLIT)), 0.75 + 0.25 * Math.sin(el * 0.06));
     setShine(-1);
 
   } else if (el < T3) {
-    // ── Shine sweep ──
-    clipWord(wordNew, 0, WORD_SPLIT, 1.0);
-    setWordOpacity('a', 1.0);
-    clipWord(wordAng, WORD_SPLIT, 1.0, 1.0);
-    setWordOpacity('b', 1.0);
-    var st = (el - T2) / (T3 - T2);
-    setShine(easeOut(st));
+    clipWordEl(wordNew, 0, WORD_SPLIT, 1.0);
+    setWordAlpha(wordNew, 1.0);
+    clipWordEl(wordAng, WORD_SPLIT, 1.0, 1.0);
+    setWordAlpha(wordAng, 1.0);
+    setShine(easeOut((el - T2) / (T3 - T2)));
 
   } else {
-    // ── Idle breathing ──
-    clipWord(wordNew, 0, WORD_SPLIT, 1.0);
-    clipWord(wordAng, WORD_SPLIT, 1.0, 1.0);
+    // Idle breathing
+    clipWordEl(wordNew, 0, WORD_SPLIT, 1.0);
+    clipWordEl(wordAng, WORD_SPLIT, 1.0, 1.0);
     setShine(-1);
     var idle = el - T3;
-    var flicker = Math.random() < 0.005 ? (0.45 + Math.random() * 0.4) : 1.0;
+    var flicker = Math.random() < 0.004 ? (0.4 + Math.random() * 0.45) : 1.0;
     var pulse = (0.78 + 0.22 * Math.sin(idle * 0.0018)) * flicker;
-    setWordOpacity('a', pulse);
-    setWordOpacity('b', pulse);
-    // Neon blackout buzz
+    setWordAlpha(wordNew, pulse);
+    setWordAlpha(wordAng, pulse);
     if (Math.random() < 0.002) {
-      ctx.save(); ctx.globalAlpha=0.18; ctx.fillStyle='#000';
-      ctx.fillRect(0,0,cvs.width,cvs.height); ctx.restore();
+      ctx.save(); ctx.globalAlpha = 0.2; ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, cvs.width, cvs.height); ctx.restore();
     }
   }
 }
 
 window.addEventListener('load', function() {
-  // Start hidden
   wordNew.style.clipPath = 'inset(0 100% 0 0)';
   wordAng.style.clipPath = 'inset(0 100% 0 0)';
-  setWordOpacity('a', 0);
-  setWordOpacity('b', 0);
+  setWordAlpha(wordNew, 0);
+  setWordAlpha(wordAng, 0);
   requestAnimationFrame(frame);
 });
 </script>
