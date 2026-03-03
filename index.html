@@ -19,7 +19,16 @@
       pointer-events: none;
     }
 
-    .logo-layer {
+    /* Logo compositing layer — screen blend over video */
+    #logo-stage {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 1;
+      background: #000;
+      mix-blend-mode: screen;
+    }
+
+    /* SVG logo — centered, 86% width */
+    #logo-svg {
       position: absolute;
       top: 50%;
       left: 7%;
@@ -28,50 +37,12 @@
       height: auto;
       display: block;
       pointer-events: none;
-    }
-
-    /* Logo sits in its own black-backed compositing layer so screen blend works correctly */
-    #logo-stage {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 1;
-      background: #000;
-      mix-blend-mode: screen;
-    }
-    #clip-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    #word-new { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    #word-ang { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-
-    /* ── Glow layers: white-on-transparent source ── */
-
-    /* Layer 1: wide fog halo */
-    .gl-fog {
-      filter: url(#neon-fog);
-      opacity: 0.8;
-      mix-blend-mode: screen;
-    }
-    /* Layer 2: mid corona */
-    .gl-corona {
-      filter: url(#neon-corona);
-      opacity: 0.9;
-      mix-blend-mode: screen;
-    }
-    /* Layer 3: tight glow */
-    .gl-glow {
-      filter: url(#neon-glow);
-      opacity: 0.95;
-      mix-blend-mode: screen;
-    }
-    /* Layer 4: crisp core */
-    .gl-core {
-      filter: url(#neon-core);
-      opacity: 1.0;
-      mix-blend-mode: screen;
-    }
-    /* Layer 5: electric outline — dilated edge, contrasted */
-    .gl-outline {
-      filter: url(#neon-outline);
-      opacity: 0.7;
-      mix-blend-mode: screen;
+      /* Neon blue glow — same visual language as old multi-layer PNG system */
+      filter:
+        drop-shadow(0 0 32px #0022ff)
+        drop-shadow(0 0 14px #1144ff)
+        drop-shadow(0 0 5px  #4488ff)
+        drop-shadow(0 0 1px  #ffffff);
     }
 
     canvas#overlay {
@@ -84,225 +55,367 @@
 </head>
 <body>
 
-<!-- SVG filter definitions -->
-<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute">
-  <defs>
-    <!-- Neon blue color matrix: turns white into electric blue -->
-    <filter id="neon-fog" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="18" result="blur"/>
-      <feColorMatrix type="matrix" values="
-        0 0 0 0 0.08
-        0 0 0 0 0.25
-        0 0 0 0 1.0
-        0 0 0 1 0" in="blur"/>
-    </filter>
-
-    <filter id="neon-corona" color-interpolation-filters="sRGB" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="7" result="blur"/>
-      <feColorMatrix type="matrix" values="
-        0 0 0 0 0.1
-        0 0 0 0 0.35
-        0 0 0 0 1.0
-        0 0 0 1 0" in="blur"/>
-    </filter>
-
-    <filter id="neon-glow" color-interpolation-filters="sRGB" x="-15%" y="-15%" width="130%" height="130%">
-      <feGaussianBlur stdDeviation="2.5" result="blur"/>
-      <feColorMatrix type="matrix" values="
-        0 0 0 0 0.2
-        0 0 0 0 0.5
-        0 0 0 0 1.0
-        0 0 0 1 0" in="blur"/>
-    </filter>
-
-    <filter id="neon-core" color-interpolation-filters="sRGB">
-      <feColorMatrix type="matrix" values="
-        0 0 0 0 0.4
-        0 0 0 0 0.65
-        0 0 0 0 1.0
-        0 0 0 1 0"/>
-    </filter>
-
-    <!-- Outline: dilate + sharp blue edge -->
-    <filter id="neon-outline" color-interpolation-filters="sRGB" x="-10%" y="-10%" width="120%" height="120%">
-      <feMorphology operator="dilate" radius="1.5" result="dilated"/>
-      <feGaussianBlur stdDeviation="0.8" result="blurred" in="dilated"/>
-      <feColorMatrix type="matrix" values="
-        0 0 0 0 0.05
-        0 0 0 0 0.5
-        0 0 0 0 1.0
-        0 0 0 4 -1" in="blurred"/>
-    </filter>
-  </defs>
-</svg>
-
 <div id="stage">
   <!-- Looping video background -->
   <video id="bg-video" autoplay loop muted playsinline>
     <source src="bg.mp4" type="video/mp4">
   </video>
 
-  <!-- Logo composited against black, then screen-blended over video -->
+  <!-- Logo: inline SVG, stroke-dashoffset handwriting animation -->
   <div id="logo-stage">
-    <div id="clip-wrapper">
-      <div id="word-new">
-        <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
-      </div>
-      <div id="word-ang">
-        <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
-        <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
-      </div>
-    </div>
+    <!--
+      ViewBox: 640 × 360  (matches the original PNG dimensions)
+      All paths are open strokes — no fill.
+      Stroke color: white (composited via screen blend → appears neon blue from filter)
+
+      Layout mirrors the original PNG:
+        "New"     — upper portion, slight upward slant, x≈80–370  y≈65–190
+        "Angeles" — lower portion, larger caps,         x≈65–615  y≈155–290
+        Swoosh    — underline from x≈490 sweeping to x≈630, dipping to y≈305
+
+      Paths are ordered in natural writing sequence for the dashoffset reveal.
+    -->
+    <svg id="logo-svg"
+         xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 640 360"
+         fill="none"
+         stroke="white"
+         stroke-linecap="round"
+         stroke-linejoin="round">
+
+      <!-- ═══════════════════════════════════════════════
+           WORD 1: "New"
+           Group id used by JS to sequence the animation
+      ════════════════════════════════════════════════ -->
+      <g id="g-new" stroke-width="9" opacity="0">
+
+        <!-- N  — cursive capital: entry serif, down, diagonal up, down again -->
+        <path id="p-N"
+          d="M 82,168
+             C 80,165  78,155  80,142
+             L 82,90
+             C 88,62   92,56   98,54
+             C 104,72  118,115  122,130
+             L 138,158
+             C 148,130  152,98   156,82
+             C 158,68   162,58   166,58
+             L 168,62
+             C 168,80   166,110  164,135
+             L 162,170" />
+
+        <!-- e  — counter-clockwise loop with exit stroke right -->
+        <path id="p-e1"
+          d="M 162,170
+             C 170,165  180,158  190,158
+             C 204,158  210,165  210,172
+             C 210,188  198,200  184,200
+             C 170,200  160,192  162,180
+             C 164,168  174,162  186,164
+             L 212,168
+             C 218,168  222,165  226,158" />
+
+        <!-- w  — three-hump cursive w with flourish up -->
+        <path id="p-w"
+          d="M 226,158
+             C 230,170  232,188  230,198
+             C 228,208  224,210  220,208
+             C 216,205  214,195  216,185
+             C 218,175  226,168  236,168
+             C 246,168  252,178  250,190
+             C 248,202  240,210  232,210
+             C 228,210  226,205  228,195
+             C 230,182  240,172  252,168
+             C 262,165  272,162  282,155
+             C 295,146  308,132  318,112
+             C 325,97   328,82   326,72
+             C 324,62   320,58   316,60" />
+
+      </g><!-- /g-new -->
+
+      <!-- ═══════════════════════════════════════════════
+           WORD 2: "Angeles"
+           Larger letterforms, lower on the canvas
+      ════════════════════════════════════════════════ -->
+      <g id="g-angeles" stroke-width="10" opacity="0">
+
+        <!-- A  — cursive capital: loop, stem, crossbar flows into n -->
+        <path id="p-A"
+          d="M 68,292
+             C 74,278  82,258  90,240
+             C 98,222  106,210  116,202
+             C 128,194  136,196  140,206
+             C 144,218  142,238  136,256
+             C 130,274  120,288  112,296
+             C 104,304  94,305  88,298
+             C 82,290  82,278  86,265
+             L 148,265
+             C 158,265  166,260  172,254" />
+
+        <!-- n  — two humps, connects from A -->
+        <path id="p-n"
+          d="M 172,254
+             C 176,244  180,232  182,222
+             C 184,215  186,210  188,210
+             C 192,210  194,218  192,228
+             C 190,240  186,255  186,268
+             C 186,278  188,285  192,285
+             C 198,285  206,276  212,262
+             C 218,248  222,232  224,220
+             C 226,212  228,206  232,206
+             C 236,206  238,215  236,228
+             C 234,244  230,262  230,278
+             C 230,288  232,295  238,295" />
+
+        <!-- g  — with descender loop below baseline -->
+        <path id="p-g"
+          d="M 238,295
+             C 246,290  256,280  264,268
+             C 272,256  274,244  270,236
+             C 266,228  256,226  246,230
+             C 236,234  228,244  228,256
+             C 228,268  236,278  248,278
+             C 260,278  270,268  274,256
+             L 278,310
+             C 280,320  278,330  272,334
+             C 264,338  252,332  244,322
+             C 238,314  238,304  244,298" />
+
+        <!-- e  — small loop with exit -->
+        <path id="p-e2"
+          d="M 282,268
+             C 290,262  300,256  312,256
+             C 326,256  334,264  334,272
+             C 334,288  320,300  304,300
+             C 288,300  278,290  282,278
+             C 284,266  296,260  308,262
+             L 336,268
+             C 342,268  348,265  350,258" />
+
+        <!-- l  — tall ascender stroke with loop at top -->
+        <path id="p-l"
+          d="M 350,258
+             C 354,248  358,232  360,215
+             C 362,198  362,184  358,175
+             C 354,168  348,166  344,170
+             C 340,176  340,190  342,208
+             C 344,228  346,252  346,272
+             C 346,285  348,292  354,292" />
+
+        <!-- e  — second e in Angeles -->
+        <path id="p-e3"
+          d="M 354,292
+             C 362,286  374,278  388,278
+             C 404,278  412,288  412,298
+             C 412,314  396,326  378,326
+             C 360,326  350,314  354,300
+             C 356,288  368,282  382,284
+             L 414,290
+             C 420,290  428,287  432,280" />
+
+        <!-- s  — flowing s-curve ending in entry to swoosh -->
+        <path id="p-s"
+          d="M 432,280
+             C 438,272  444,262  444,252
+             C 444,244  440,238  432,238
+             C 424,238  416,244  414,254
+             C 412,264  416,274  424,278
+             C 434,284  444,282  450,272
+             C 456,262  456,248  450,240
+             C 446,234  440,232  434,234" />
+
+        <!-- Signature swoosh — the long underline flourish -->
+        <!-- Starts from end of 's', sweeps right and slightly down then curves up to a long tail -->
+        <path id="p-swoosh"
+          stroke-width="7"
+          d="M 434,234
+             C 448,228  466,222  490,228
+             C 514,234  538,248  558,258
+             C 572,265  584,268  596,262
+             C 610,256  620,244  626,232
+             C 630,222  630,210  626,204" />
+
+      </g><!-- /g-angeles -->
+
+    </svg>
   </div>
+
   <canvas id="overlay"></canvas>
 </div>
 
 <script>
-var stage   = document.getElementById('stage');
-var wordNew = document.getElementById('word-new');
-var wordAng = document.getElementById('word-ang');
-var cvs     = document.getElementById('overlay');
-var ctx     = cvs.getContext('2d');
+(function () {
+  'use strict';
 
-var LOGO_LEFT  = 0.07;
-var LOGO_WIDTH = 0.86;
-var WORD_SPLIT = 0.59; // "New" ends at 59% of logo width
+  var svg     = document.getElementById('logo-svg');
+  var gNew    = document.getElementById('g-new');
+  var gAng    = document.getElementById('g-angeles');
+  var cvs     = document.getElementById('overlay');
+  var ctx     = cvs.getContext('2d');
 
-function resize() { cvs.width = window.innerWidth; cvs.height = window.innerHeight; }
-resize();
-window.addEventListener('resize', resize);
+  /* ── Resize canvas ── */
+  function resize() { cvs.width = window.innerWidth; cvs.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
 
-function logoX(frac) { return (LOGO_LEFT + frac * LOGO_WIDTH) * window.innerWidth; }
-
-function clipWordEl(el, startFrac, endFrac, revealFrac) {
-  var W = window.innerWidth;
-  var startPx  = logoX(startFrac);
-  var endPx    = logoX(endFrac);
-  var revealPx = startPx + revealFrac * (endPx - startPx);
-  el.style.clipPath = 'inset(0 ' + Math.max(0, W - revealPx).toFixed(1) + 'px 0 ' + startPx.toFixed(1) + 'px)';
-}
-
-function setWordAlpha(wordEl, alpha) {
-  var imgs = wordEl.querySelectorAll('img');
-  var baseOp = [0.8, 0.9, 0.95, 1.0, 0.7];
-  for (var i = 0; i < imgs.length; i++) {
-    imgs[i].style.opacity = (baseOp[i] * alpha).toFixed(3);
-  }
-}
-
-// Electricity flash — bright leading edge
-function drawFlash(x, intensity) {
-  if (intensity <= 0) return;
-  var H = cvs.height;
-  var g = ctx.createLinearGradient(x - 80, 0, x + 15, 0);
-  g.addColorStop(0,    'rgba(100,180,255,0)');
-  g.addColorStop(0.65, 'rgba(150,210,255,' + (intensity * 0.45).toFixed(2) + ')');
-  g.addColorStop(0.88, 'rgba(220,240,255,' + (intensity * 0.85).toFixed(2) + ')');
-  g.addColorStop(1,    'rgba(255,255,255,' + (intensity * 0.95).toFixed(2) + ')');
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, cvs.width, H);
-  ctx.restore();
-}
-
-// Shine sweep
-var shineDiv = document.createElement('div');
-shineDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:0;z-index:3;';
-stage.appendChild(shineDiv);
-
-function setShine(frac) {
-  if (frac < 0) { shineDiv.style.opacity = '0'; return; }
-  var pct = (LOGO_LEFT * 100 + frac * LOGO_WIDTH * 100).toFixed(1);
-  shineDiv.style.opacity = '1';
-  shineDiv.style.background =
-    'linear-gradient(to right,rgba(255,255,255,0) '+(parseFloat(pct)-10)+'%,'
-    +'rgba(255,255,255,0.65) '+pct+'%,'
-    +'rgba(255,255,255,0) '+(parseFloat(pct)+10)+'%)';
-}
-
-var T1 = 1500, T2 = 3400, T3 = T2 + 950;
-var t0 = null;
-function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-function easeOut(t) { return 1-(1-t)*(1-t); }
-
-var refImg = wordNew.querySelector('img');
-
-function frame(ts) {
-  requestAnimationFrame(frame);
-  if (!refImg.complete || !refImg.naturalWidth) return;
-  if (!t0) t0 = ts;
-  var el = ts - t0;
-
-  ctx.clearRect(0, 0, cvs.width, cvs.height);
-
-  // Scanline buzz
-  if (Math.random() < 0.018) {
-    ctx.save();
-    ctx.globalAlpha = 0.03 + Math.random() * 0.05;
-    ctx.fillStyle = '#1133ff';
-    ctx.fillRect(0, Math.random() * cvs.height, cvs.width, 1);
-    ctx.restore();
+  /* ── Ease in-out (cubic) ── */
+  function easeInOut(t) {
+    t = Math.max(0, Math.min(1, t));
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
 
-  if (el < T1) {
-    // "New" writing
-    var t = ease(el / T1);
-    clipWordEl(wordNew, 0, WORD_SPLIT, t);
-    setWordAlpha(wordNew, 1.0);
-    wordAng.style.clipPath = 'inset(0 100% 0 0)';
-    setWordAlpha(wordAng, 0);
-    drawFlash(logoX(t * WORD_SPLIT), 0.75 + 0.25 * Math.sin(el * 0.06));
-    setShine(-1);
+  /* ── Initialise stroke-dasharray on every path in a <g> ── */
+  function initGroup(g) {
+    var paths = g.querySelectorAll('path');
+    var total = 0;
+    paths.forEach(function (p) {
+      var len = p.getTotalLength();
+      p.style.strokeDasharray  = len;
+      p.style.strokeDashoffset = len;
+      total += len;
+    });
+    return total;
+  }
 
-  } else if (el < T2) {
-    // "Angeles" writing
-    clipWordEl(wordNew, 0, WORD_SPLIT, 1.0);
-    setWordAlpha(wordNew, 1.0);
-    var t2 = ease((el - T1) / (T2 - T1));
-    clipWordEl(wordAng, WORD_SPLIT, 1.0, t2);
-    setWordAlpha(wordAng, 1.0);
-    drawFlash(logoX(WORD_SPLIT + t2 * (1.0 - WORD_SPLIT)), 0.75 + 0.25 * Math.sin(el * 0.06));
-    setShine(-1);
+  /* ── Animate a group of paths over `duration` ms ──
+       Distributes each path's share of the total length proportionally.
+       `startTs` = absolute timestamp when this group should begin.
+  ── */
+  function animateGroup(g, startTs, duration, onDone) {
+    var paths = g.querySelectorAll('path');
+    var lengths = [];
+    var total = 0;
+    paths.forEach(function (p) {
+      var l = p.getTotalLength();
+      lengths.push(l);
+      total += l;
+    });
 
-  } else if (el < T3) {
-    clipWordEl(wordNew, 0, WORD_SPLIT, 1.0);
-    setWordAlpha(wordNew, 1.0);
-    clipWordEl(wordAng, WORD_SPLIT, 1.0, 1.0);
-    setWordAlpha(wordAng, 1.0);
-    setShine(easeOut((el - T2) / (T3 - T2)));
+    /* cumulative start fraction for each path */
+    var cumFracs = [];
+    var cum = 0;
+    lengths.forEach(function (l) {
+      cumFracs.push(cum / total);
+      cum += l;
+    });
 
-  } else {
-    // Idle breathing
-    clipWordEl(wordNew, 0, WORD_SPLIT, 1.0);
-    clipWordEl(wordAng, WORD_SPLIT, 1.0, 1.0);
-    setShine(-1);
-    var idle = el - T3;
-    var flicker = Math.random() < 0.004 ? (0.4 + Math.random() * 0.45) : 1.0;
-    var pulse = (0.78 + 0.22 * Math.sin(idle * 0.0018)) * flicker;
-    setWordAlpha(wordNew, pulse);
-    setWordAlpha(wordAng, pulse);
+    function tick(ts) {
+      var elapsed  = ts - startTs;
+      var progress = Math.max(0, Math.min(1, elapsed / duration));
+      var eased    = easeInOut(progress);
+
+      g.style.opacity = 1;
+
+      paths.forEach(function (p, i) {
+        var startFrac = cumFracs[i];
+        var endFrac   = startFrac + lengths[i] / total;
+        /* local t for this path: 0 → 1 over its slice of total timeline */
+        var localT = Math.max(0, Math.min(1, (eased - startFrac) / (endFrac - startFrac)));
+        p.style.strokeDashoffset = lengths[i] * (1 - localT);
+      });
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        /* ensure all fully drawn */
+        paths.forEach(function (p) { p.style.strokeDashoffset = 0; });
+        if (onDone) onDone();
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  /* ── Breathing pulse after reveal ── */
+  var pulseActive = false;
+  var pulseStart  = 0;
+
+  function startPulse(ts) {
+    pulseActive = true;
+    pulseStart  = ts;
+  }
+
+  /* ── Scanlines canvas drawing ── */
+  function drawScanlines(ts) {
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+    /* Occasional single horizontal scanline buzz */
+    if (Math.random() < 0.018) {
+      ctx.save();
+      ctx.globalAlpha = 0.03 + Math.random() * 0.05;
+      ctx.fillStyle = '#1133ff';
+      ctx.fillRect(0, Math.random() * cvs.height, cvs.width, 1);
+      ctx.restore();
+    }
+
+    /* Very rare full-frame blink-dark */
     if (Math.random() < 0.002) {
-      ctx.save(); ctx.globalAlpha = 0.2; ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, cvs.width, cvs.height); ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+      ctx.restore();
     }
   }
-}
 
-window.addEventListener('load', function() {
-  wordNew.style.clipPath = 'inset(0 100% 0 0)';
-  wordAng.style.clipPath = 'inset(0 100% 0 0)';
-  setWordAlpha(wordNew, 0);
-  setWordAlpha(wordAng, 0);
-  requestAnimationFrame(frame);
-});
+  /* ── Main animation loop ──
+       Phase 1: write "New"        (0 → T1 ms)
+       Phase 2: write "Angeles"    (T1 - OVERLAP → T1 + T2 ms)
+       Phase 3: breathing pulse    (forever after)
+  ── */
+  var T1      = 1500;   /* "New" duration */
+  var T2      = 2200;   /* "Angeles" duration */
+  var OVERLAP = 200;    /* Angeles starts this many ms before New finishes */
+
+  var newStarted = false;
+  var angStarted = false;
+  var pulsed     = false;
+  var t0         = null;
+
+  function frame(ts) {
+    requestAnimationFrame(frame);
+
+    if (!t0) t0 = ts;
+    var elapsed = ts - t0;
+
+    drawScanlines(ts);
+
+    /* — Phase 1: kick off "New" — */
+    if (!newStarted) {
+      newStarted = true;
+      animateGroup(gNew, ts, T1, null);
+    }
+
+    /* — Phase 2: kick off "Angeles" with slight overlap — */
+    if (!angStarted && elapsed >= T1 - OVERLAP) {
+      angStarted = true;
+      animateGroup(gAng, ts, T2, function () {
+        if (!pulsed) { pulsed = true; startPulse(performance.now()); }
+      });
+    }
+
+    /* — Phase 3: breathing pulse — */
+    if (pulseActive) {
+      var idle    = performance.now() - pulseStart;
+      var flicker = Math.random() < 0.004 ? (0.45 + Math.random() * 0.4) : 1.0;
+      var pulse   = (0.78 + 0.22 * Math.sin(idle * 0.0018)) * flicker;
+      svg.style.opacity = pulse.toFixed(3);
+    }
+  }
+
+  /* ── Bootstrap ── */
+  window.addEventListener('load', function () {
+    /* Hide groups until animation begins */
+    gNew.style.opacity = 0;
+    gAng.style.opacity = 0;
+
+    /* Pre-calculate total lengths & set dash arrays */
+    initGroup(gNew);
+    initGroup(gAng);
+
+    requestAnimationFrame(frame);
+  });
+
+}());
 </script>
 </body>
 </html>
