@@ -28,66 +28,63 @@ logo.src = 'NewAngeles-02.png';
 
 function getLayout() {
   var W = canvas.width, H = canvas.height;
-  var padX = W * 0.08;
-  var aspect = logo.naturalWidth && logo.naturalHeight ? logo.naturalWidth / logo.naturalHeight : 640/360;
-  var drawW = W - padX * 2;
-  var drawH = drawW / aspect;
+  var padX = W * 0.07;
+  var aspect = logo.naturalWidth && logo.naturalHeight ? logo.naturalWidth/logo.naturalHeight : 640/360;
+  var drawW = W - padX*2;
+  var drawH = drawW/aspect;
   var drawX = padX;
-  var drawY = (H - drawH) / 2;
-  return { W:W, H:H, drawX:drawX, drawY:drawY, drawW:drawW, drawH:drawH };
+  var drawY = (H-drawH)/2;
+  return {W:W,H:H,drawX:drawX,drawY:drawY,drawW:drawW,drawH:drawH};
 }
 
 // ── Sparks ─────────────────────────────────────────────────────────────────
 var sparks = [];
 function spawnSparks(x, y, n, burst) {
-  for (var i = 0; i < n; i++) {
+  for (var i=0; i<n; i++) {
     sparks.push({
       x:x, y:y,
-      vx:(Math.random()-0.5)*(burst?6:2.5),
-      vy:-(Math.random()*(burst?6:3.5)+0.5),
+      vx:(Math.random()-0.5)*(burst?7:3),
+      vy:-(Math.random()*(burst?7:4)+0.5),
       life:1,
-      decay:0.011+Math.random()*0.018,
-      r:burst?(2.5+Math.random()*4.5):(1+Math.random()*2.5),
+      decay:0.01+Math.random()*0.017,
+      r:burst?(3+Math.random()*5):(1.2+Math.random()*2.8),
       hue:195+Math.random()*50
     });
   }
-  while (sparks.length > 600) sparks.shift();
+  while(sparks.length>700) sparks.shift();
 }
 
 function tickSparks() {
-  for (var i = sparks.length-1; i >= 0; i--) {
-    var s = sparks[i];
-    s.x += s.vx; s.y += s.vy; s.vy += 0.07;
-    s.life -= s.decay;
-    if (s.life <= 0) { sparks.splice(i,1); continue; }
+  for (var i=sparks.length-1; i>=0; i--) {
+    var s=sparks[i];
+    s.x+=s.vx; s.y+=s.vy; s.vy+=0.08;
+    s.life-=s.decay;
+    if(s.life<=0){sparks.splice(i,1);continue;}
+    var r=Math.max(0.5,s.r*s.life);
     ctx.save();
-    ctx.globalAlpha = s.life;
-    ctx.shadowBlur = 16;
-    ctx.shadowColor = 'hsl('+s.hue+',100%,80%)';
-    ctx.fillStyle = 'hsl('+s.hue+',100%,'+(50+s.life*50)+'%)';
-    // 4-point star for larger sparks
-    var r = Math.max(0.5, s.r * s.life);
-    if (r > 2) {
+    ctx.globalAlpha=s.life;
+    ctx.shadowBlur=r>2?20:10;
+    ctx.shadowColor='hsl('+s.hue+',100%,85%)';
+    ctx.fillStyle='hsl('+s.hue+',100%,'+(50+s.life*50)+'%)';
+    if(r>2.5){
+      // 4-point star
       ctx.beginPath();
-      for (var p=0; p<8; p++) {
-        var a = p * Math.PI/4;
-        var rr = (p%2===0) ? r : r*0.35;
-        var px = s.x + Math.cos(a)*rr, py = s.y + Math.sin(a)*rr;
-        p===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+      for(var p=0;p<8;p++){
+        var a=p*Math.PI/4;
+        var rr=(p%2===0)?r:r*0.3;
+        p===0?ctx.moveTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr):ctx.lineTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr);
       }
-      ctx.closePath();
-      ctx.fill();
+      ctx.closePath();ctx.fill();
     } else {
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, r, 0, Math.PI*2);
-      ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,r,0,Math.PI*2);ctx.fill();
     }
     ctx.restore();
   }
 }
 
-// ── Neon glow draw ─────────────────────────────────────────────────────────
-// Draws logo with neon tube effect using multiple shadowBlur passes
+// ── Neon: draw logo with stacked shadow passes ─────────────────────────────
+// Key insight: each drawImage call with shadowBlur adds a glow layer.
+// Stack many passes with high shadowBlur to simulate thick neon tube.
 function drawNeon(fraction, alpha) {
   var l = getLayout();
   var clipW = fraction * l.drawW;
@@ -98,135 +95,96 @@ function drawNeon(fraction, alpha) {
   ctx.rect(l.drawX, 0, clipW, l.H);
   ctx.clip();
 
-  // Pass 1: Wide outer halo (deep blue fog)
-  ctx.save();
-  ctx.globalAlpha = alpha * 0.18;
-  ctx.shadowBlur = 80;
-  ctx.shadowColor = '#0022cc';
-  ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
-  ctx.restore();
+  var passes = [
+    // [shadowBlur, shadowColor, globalAlpha]
+    [120, '#001166', 0.20],
+    [80,  '#0022aa', 0.28],
+    [55,  '#0033dd', 0.35],
+    [35,  '#1144ff', 0.45],
+    [20,  '#2255ff', 0.55],
+    [12,  '#3366ff', 0.70],
+    [6,   '#5588ff', 0.88],
+    [3,   '#88aaff', 1.00],
+    [1,   '#ccddff', 1.00],
+  ];
 
-  // Pass 2: Mid glow
-  ctx.save();
-  ctx.globalAlpha = alpha * 0.35;
-  ctx.shadowBlur = 40;
-  ctx.shadowColor = '#1133ee';
-  ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
-  ctx.restore();
-
-  // Pass 3: Tight glow
-  ctx.save();
-  ctx.globalAlpha = alpha * 0.60;
-  ctx.shadowBlur = 16;
-  ctx.shadowColor = '#2255ff';
-  ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
-  ctx.restore();
-
-  // Pass 4: Inner bright core
-  ctx.save();
-  ctx.globalAlpha = alpha * 0.85;
-  ctx.shadowBlur = 6;
-  ctx.shadowColor = '#6699ff';
-  ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
-  ctx.restore();
-
-  // Pass 5: Crisp core (full alpha)
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.shadowBlur = 2;
-  ctx.shadowColor = '#aaccff';
-  ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
-  ctx.restore();
+  for (var i=0; i<passes.length; i++) {
+    var p = passes[i];
+    ctx.save();
+    ctx.shadowBlur   = p[0];
+    ctx.shadowColor  = p[1];
+    ctx.globalAlpha  = alpha * p[2];
+    ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
+    ctx.restore();
+  }
 
   ctx.restore();
 }
 
 // ── Animation ──────────────────────────────────────────────────────────────
-var T_WRITE     = 3000;
-var T_SHINE_END = T_WRITE + 1000;
-
-var t0 = null, prevRX = -1, lastTwinkle = 0;
-function ease(t) { return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
+var T_WRITE=3000, T_SHINE_END=T_WRITE+1000;
+var t0=null, prevRX=-1, lastTwinkle=0;
+function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}
 
 function frame(ts) {
   requestAnimationFrame(frame);
   if (!logo.complete || !logo.naturalWidth) return;
-  var l = getLayout();
-  if (!t0) t0 = ts;
-  var el = ts - t0;
+  var l=getLayout();
+  if (!t0) t0=ts;
+  var el=ts-t0;
 
-  // Black bg
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, l.W, l.H);
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,l.W,l.H);
 
-  // Subtle horizontal scanline buzz
-  if (Math.random() < 0.018) {
+  // Scanline
+  if (Math.random()<0.02) {
     ctx.save();
-    ctx.globalAlpha = 0.03 + Math.random()*0.05;
-    ctx.fillStyle = '#1133ff';
-    ctx.fillRect(0, Math.random()*l.H, l.W, 1);
+    ctx.globalAlpha=0.03+Math.random()*0.05;
+    ctx.fillStyle='#1133ff';
+    ctx.fillRect(0,Math.random()*l.H,l.W,1);
     ctx.restore();
   }
 
   if (el < T_WRITE) {
-    // ── Write-on ──
-    var t = ease(el / T_WRITE);
+    var t=ease(el/T_WRITE);
     drawNeon(t, 1.0);
-    var rx = l.drawX + t * l.drawW;
-    if (rx - prevRX > 3) {
-      spawnSparks(rx, l.drawY + l.drawH*(0.2+Math.random()*0.6), 2+Math.floor(Math.random()*4), false);
-      prevRX = rx;
+    var rx=l.drawX+t*l.drawW;
+    if (rx-prevRX>3) {
+      spawnSparks(rx, l.drawY+l.drawH*(0.2+Math.random()*0.6), 3+Math.floor(Math.random()*5), false);
+      prevRX=rx;
     }
   } else if (el < T_SHINE_END) {
-    // ── Shine sweep ──
     drawNeon(1.0, 1.0);
-    var st = (el - T_WRITE) / (T_SHINE_END - T_WRITE);
-    var sx = l.drawX - 120 + st * (l.drawW + 280);
-    var g = ctx.createLinearGradient(sx-90, 0, sx+90, 0);
-    g.addColorStop(0,   'rgba(255,255,255,0)');
-    g.addColorStop(0.4, 'rgba(200,220,255,0.3)');
-    g.addColorStop(0.5, 'rgba(255,255,255,0.55)');
-    g.addColorStop(0.6, 'rgba(200,220,255,0.3)');
-    g.addColorStop(1,   'rgba(255,255,255,0)');
+    var st=(el-T_WRITE)/(T_SHINE_END-T_WRITE);
+    var sx=l.drawX-130+st*(l.drawW+300);
+    var g=ctx.createLinearGradient(sx-100,0,sx+100,0);
+    g.addColorStop(0,'rgba(255,255,255,0)');
+    g.addColorStop(0.35,'rgba(180,210,255,0.28)');
+    g.addColorStop(0.5,'rgba(255,255,255,0.65)');
+    g.addColorStop(0.65,'rgba(180,210,255,0.28)');
+    g.addColorStop(1,'rgba(255,255,255,0)');
     ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, l.W, l.H);
+    ctx.globalCompositeOperation='screen';
+    ctx.fillStyle=g;
+    ctx.fillRect(0,0,l.W,l.H);
     ctx.restore();
-    // Burst sparks during shine
-    if (Math.random() < 0.5) {
-      spawnSparks(
-        l.drawX + Math.random()*l.drawW,
-        l.drawY + l.drawH*(0.15+Math.random()*0.7),
-        1+Math.floor(Math.random()*4),
-        Math.random()<0.3
-      );
+    if (Math.random()<0.55) {
+      spawnSparks(l.drawX+Math.random()*l.drawW,l.drawY+l.drawH*(0.1+Math.random()*0.8),2+Math.floor(Math.random()*5),Math.random()<0.35);
     }
   } else {
-    // ── Idle breathing ──
-    var idle = el - T_SHINE_END;
-    // Gentle neon buzz: occasional flicker
-    var flicker = Math.random() < 0.003 ? (0.6+Math.random()*0.3) : 1.0;
-    var pulse = (0.82 + 0.18 * Math.sin(idle*0.0018)) * flicker;
+    var idle=el-T_SHINE_END;
+    // Occasional rapid neon stutter
+    var flicker=1.0;
+    if (Math.random()<0.004) flicker=0.5+Math.random()*0.4;
+    var pulse=(0.80+0.20*Math.sin(idle*0.0018))*flicker;
     drawNeon(1.0, pulse);
-
-    if (ts - lastTwinkle > 60+Math.random()*250) {
-      lastTwinkle = ts;
-      spawnSparks(
-        l.drawX + l.drawW*(0.05+Math.random()*0.9),
-        l.drawY + l.drawH*(0.1+Math.random()*0.8),
-        1+(Math.random()<0.2?4:0),
-        Math.random()<0.15
-      );
+    if (ts-lastTwinkle > 70+Math.random()*230) {
+      lastTwinkle=ts;
+      spawnSparks(l.drawX+l.drawW*(0.05+Math.random()*0.9),l.drawY+l.drawH*(0.1+Math.random()*0.8),1+(Math.random()<0.22?5:0),Math.random()<0.18);
     }
-
-    // Rare double-flicker (neon buzz)
-    if (Math.random() < 0.002) {
-      ctx.save();
-      ctx.globalAlpha = 0.12;
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, l.W, l.H);
-      ctx.restore();
+    // Neon blackout buzz
+    if (Math.random()<0.002) {
+      ctx.save();ctx.globalAlpha=0.15;ctx.fillStyle='#000';ctx.fillRect(0,0,l.W,l.H);ctx.restore();
     }
   }
 
