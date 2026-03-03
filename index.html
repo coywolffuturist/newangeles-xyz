@@ -30,7 +30,14 @@
       pointer-events: none;
     }
 
-    #clip-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    /* Logo sits in its own black-backed compositing layer so screen blend works correctly */
+    #logo-stage {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 1;
+      background: #000;
+      mix-blend-mode: screen;
+    }
+    #clip-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     #word-new { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     #word-ang { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
@@ -71,7 +78,7 @@
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
       pointer-events: none;
-      z-index: 2;
+      z-index: 3;
     }
   </style>
 </head>
@@ -135,20 +142,23 @@
     <source src="bg.mp4" type="video/mp4">
   </video>
 
-  <div id="clip-wrapper">
-    <div id="word-new">
-      <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
-    </div>
-    <div id="word-ang">
-      <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
-      <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
+  <!-- Logo composited against black, then screen-blended over video -->
+  <div id="logo-stage">
+    <div id="clip-wrapper">
+      <div id="word-new">
+        <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
+      </div>
+      <div id="word-ang">
+        <img class="logo-layer gl-fog"     src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-corona"  src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-glow"    src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-core"    src="NewAngeles-05.png" alt="">
+        <img class="logo-layer gl-outline" src="NewAngeles-05.png" alt="">
+      </div>
     </div>
   </div>
   <canvas id="overlay"></canvas>
