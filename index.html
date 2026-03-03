@@ -4,192 +4,288 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Angeles</title>
-  <link rel="icon" type="image/png" href="NewAngeles-04.png">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --blue: #2B5BF5;
-      --black: #080808;
-      --off-white: #F2F0EC;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      height: 100%;
-      background: var(--black);
-      color: var(--off-white);
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      width: 100%; height: 100%;
+      background: #000;
       overflow: hidden;
-      position: relative;
     }
-
-    /* Subtle radial glow */
-    body::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(43, 91, 245, 0.07) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 40px;
-      padding: 40px 24px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .logo-wrap {
-      width: min(540px, 85vw);
-      animation: fadeUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .logo-wrap img {
-      width: 100%;
-      height: auto;
+    canvas {
       display: block;
-    }
-
-    .tagline {
-      font-size: clamp(13px, 2vw, 16px);
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: rgba(242, 240, 236, 0.45);
-      animation: fadeUp 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
-    }
-
-    .cta-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      animation: fadeUp 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
-    }
-
-    .email-form {
-      display: flex;
-      gap: 0;
-      width: min(420px, 90vw);
-      border: 1px solid rgba(43, 91, 245, 0.4);
-      border-radius: 4px;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .email-form:focus-within {
-      border-color: var(--blue);
-    }
-
-    .email-form input {
-      flex: 1;
-      background: rgba(255,255,255,0.04);
-      border: none;
-      outline: none;
-      padding: 14px 18px;
-      font-size: 14px;
-      color: var(--off-white);
-      font-family: inherit;
-    }
-
-    .email-form input::placeholder {
-      color: rgba(242, 240, 236, 0.3);
-    }
-
-    .email-form button {
-      background: var(--blue);
-      border: none;
-      padding: 14px 22px;
-      color: #fff;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.2s, opacity 0.2s;
-      white-space: nowrap;
-    }
-
-    .email-form button:hover {
-      background: #1a46d4;
-    }
-
-    .note {
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(242, 240, 236, 0.25);
-    }
-
-    /* Decorative corner lines */
-    .corner {
-      position: fixed;
-      width: 40px;
-      height: 40px;
-      opacity: 0.2;
-    }
-    .corner--tl { top: 24px; left: 24px; border-top: 1px solid var(--blue); border-left: 1px solid var(--blue); }
-    .corner--tr { top: 24px; right: 24px; border-top: 1px solid var(--blue); border-right: 1px solid var(--blue); }
-    .corner--bl { bottom: 24px; left: 24px; border-bottom: 1px solid var(--blue); border-left: 1px solid var(--blue); }
-    .corner--br { bottom: 24px; right: 24px; border-bottom: 1px solid var(--blue); border-right: 1px solid var(--blue); }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 480px) {
-      .email-form { flex-direction: column; }
-      .email-form button { padding: 14px; }
+      width: 100vw;
+      height: 100vh;
     }
   </style>
 </head>
 <body>
+<canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── Scene Setup ───────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x000000, 1);
 
-  <div class="corner corner--tl"></div>
-  <div class="corner corner--tr"></div>
-  <div class="corner corner--bl"></div>
-  <div class="corner corner--br"></div>
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+camera.position.z = 1;
 
-  <div class="container">
-    <div class="logo-wrap">
-      <img src="NewAngeles-02.png" alt="New Angeles" />
-    </div>
+// ─── Offscreen Canvas ──────────────────────────────────────────────────────
+const offscreen = document.createElement('canvas');
+const W = 1024, H = 576;
+offscreen.width = W; offscreen.height = H;
+const ctx = offscreen.getContext('2d');
 
-    <p class="tagline">Something is coming</p>
+// ─── Logo ──────────────────────────────────────────────────────────────────
+const logoImg = new Image();
+logoImg.src = 'NewAngeles-02.png';
 
-    <div class="cta-wrap">
-      <form class="email-form" onsubmit="handleSubmit(event)">
-        <input type="email" placeholder="your@email.com" required autocomplete="email" />
-        <button type="submit">Notify me</button>
-      </form>
-      <span class="note">Be the first to know</span>
-    </div>
-  </div>
+// Layout constants — computed once logo loads
+let drawX, drawY, drawW, drawH, LOGO_RIGHT;
 
-  <script>
-    function handleSubmit(e) {
-      e.preventDefault();
-      const input = e.target.querySelector('input');
-      const btn = e.target.querySelector('button');
-      btn.textContent = '✓ You\'re in';
-      btn.style.background = '#1a8a5a';
-      input.disabled = true;
-      btn.disabled = true;
+function computeLayout() {
+  const pad = W * 0.1;
+  const logoAspect = logoImg.naturalWidth / logoImg.naturalHeight;
+  drawW = W - pad * 2;
+  drawH = drawW / logoAspect;
+  drawX = pad;
+  drawY = (H - drawH) / 2;
+  LOGO_RIGHT = drawX + drawW;
+}
+
+// ─── Neon draw ─────────────────────────────────────────────────────────────
+function drawFrame(revealX, glowAlpha) {
+  // Black bg
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // Offscreen logo composite
+  const tmp = document.createElement('canvas');
+  tmp.width = W; tmp.height = H;
+  const tc = tmp.getContext('2d');
+  tc.drawImage(logoImg, drawX, drawY, drawW, drawH);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, revealX, H);
+  ctx.clip();
+
+  // Glow halos
+  const halos = [
+    { blur: 48, alpha: 0.12 },
+    { blur: 24, alpha: 0.22 },
+    { blur: 10, alpha: 0.40 },
+    { blur: 3,  alpha: 0.70 },
+  ];
+  for (const h of halos) {
+    ctx.save();
+    ctx.filter = `blur(${h.blur}px)`;
+    ctx.globalAlpha = glowAlpha * h.alpha;
+    ctx.globalCompositeOperation = 'screen';
+    // Draw blue-tinted version
+    const t2 = document.createElement('canvas');
+    t2.width = W; t2.height = H;
+    const tc2 = t2.getContext('2d');
+    tc2.drawImage(tmp, 0, 0);
+    tc2.globalCompositeOperation = 'source-atop';
+    tc2.fillStyle = '#1144ff';
+    tc2.fillRect(0, 0, W, H);
+    ctx.drawImage(t2, 0, 0);
+    ctx.restore();
+  }
+
+  // Core neon blue
+  ctx.save();
+  ctx.globalAlpha = glowAlpha;
+  ctx.globalCompositeOperation = 'source-over';
+  const t3 = document.createElement('canvas');
+  t3.width = W; t3.height = H;
+  const tc3 = t3.getContext('2d');
+  tc3.drawImage(tmp, 0, 0);
+  tc3.globalCompositeOperation = 'source-atop';
+  tc3.fillStyle = '#2255ff';
+  tc3.fillRect(0, 0, W, H);
+  ctx.drawImage(t3, 0, 0);
+  ctx.restore();
+
+  // Bright white core
+  ctx.save();
+  ctx.globalAlpha = glowAlpha * 0.55;
+  ctx.globalCompositeOperation = 'screen';
+  const t4 = document.createElement('canvas');
+  t4.width = W; t4.height = H;
+  const tc4 = t4.getContext('2d');
+  tc4.drawImage(tmp, 0, 0);
+  tc4.globalCompositeOperation = 'source-atop';
+  tc4.fillStyle = '#aaccff';
+  tc4.fillRect(0, 0, W, H);
+  ctx.drawImage(t4, 0, 0);
+  ctx.restore();
+
+  ctx.restore(); // end clip
+}
+
+// ─── Sparkles ──────────────────────────────────────────────────────────────
+const sparks = [];
+function spawnSpark(x, y, burst) {
+  const n = burst ? 6 : 1;
+  for (let i = 0; i < n; i++) {
+    sparks.push({
+      x, y,
+      vx: (Math.random() - 0.5) * (burst ? 4 : 2),
+      vy: (Math.random() - 0.7) * (burst ? 4 : 2.5),
+      life: 1.0,
+      decay: 0.014 + Math.random() * 0.018,
+      size: burst ? (2 + Math.random() * 4) : (1 + Math.random() * 2.5),
+      hue: 195 + Math.random() * 50,
+    });
+  }
+  while (sparks.length > 400) sparks.shift();
+}
+
+function tickSparks() {
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx;
+    s.y += s.vy;
+    s.vy += 0.06;
+    s.life -= s.decay;
+    if (s.life <= 0) { sparks.splice(i, 1); continue; }
+
+    ctx.save();
+    ctx.globalAlpha = s.life;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = `hsl(${s.hue},100%,75%)`;
+    ctx.fillStyle = `hsl(${s.hue},100%,${55 + s.life * 45}%)`;
+
+    // Star shape for bigger sparks
+    if (s.size > 2.5) {
+      const r = s.size * s.life;
+      ctx.beginPath();
+      for (let p = 0; p < 4; p++) {
+        const a = (p / 4) * Math.PI * 2;
+        const x = s.x + Math.cos(a) * r;
+        const y = s.y + Math.sin(a) * r;
+        p === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+      ctx.fill();
     }
-  </script>
+    ctx.restore();
+  }
+}
 
+// ─── Three.js Quad ─────────────────────────────────────────────────────────
+const texture = new THREE.CanvasTexture(offscreen);
+texture.minFilter = THREE.LinearFilter;
+const mesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  new THREE.MeshBasicMaterial({ map: texture, transparent: false })
+);
+scene.add(mesh);
+
+// ─── Timing ────────────────────────────────────────────────────────────────
+const T_WRITE  = 3200;
+const T_SHINE  = T_WRITE + 900;
+const T_IDLE   = T_SHINE;
+
+let t0 = null;
+let prevRevealX = 0;
+let lastTwinkle = 0;
+
+function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+function animate(ts) {
+  requestAnimationFrame(animate);
+
+  if (!logoImg.complete || logoImg.naturalWidth === 0) {
+    renderer.render(scene, camera); return;
+  }
+  if (!drawX) computeLayout();
+  if (!t0) t0 = ts;
+
+  const el = ts - t0;
+
+  if (el < T_WRITE) {
+    // Write-on phase
+    const t = ease(Math.min(el / T_WRITE, 1));
+    const revealX = drawX + t * drawW;
+    drawFrame(revealX, 1.0);
+
+    // Sparks at leading edge
+    if (revealX > prevRevealX + 3) {
+      const sy = drawY + drawH * (0.25 + Math.random() * 0.5);
+      spawnSpark(revealX, sy, false);
+      prevRevealX = revealX;
+    }
+    tickSparks();
+
+  } else if (el < T_SHINE) {
+    // Shine sweep
+    const st = (el - T_WRITE) / (T_SHINE - T_WRITE);
+    drawFrame(LOGO_RIGHT, 1.0);
+
+    const shineX = drawX - 80 + st * (drawW + 200);
+    const grad = ctx.createLinearGradient(shineX - 70, 0, shineX + 70, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.4)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+
+    // Burst sparks
+    if (Math.random() < 0.5) {
+      const sx = drawX + Math.random() * drawW;
+      const sy = drawY + drawH * (0.2 + Math.random() * 0.6);
+      spawnSpark(sx, sy, Math.random() < 0.3);
+    }
+    tickSparks();
+
+  } else {
+    // Idle breathing
+    const idleEl = el - T_IDLE;
+    const pulse = 0.85 + 0.15 * Math.sin(idleEl * 0.0018);
+    drawFrame(LOGO_RIGHT, pulse);
+
+    // Twinkle
+    if (ts - lastTwinkle > 60 + Math.random() * 250) {
+      lastTwinkle = ts;
+      const sx = drawX + drawW * (0.05 + Math.random() * 0.9);
+      const sy = drawY + drawH * (0.1 + Math.random() * 0.8);
+      spawnSpark(sx, sy, Math.random() < 0.25);
+    }
+    tickSparks();
+
+    // Rare scanline flicker
+    if (Math.random() < 0.012) {
+      ctx.save();
+      ctx.globalAlpha = 0.05 + Math.random() * 0.04;
+      ctx.fillStyle = '#2244ff';
+      ctx.fillRect(0, Math.random() * H, W, 1 + Math.random());
+      ctx.restore();
+    }
+  }
+
+  texture.needsUpdate = true;
+  renderer.render(scene, camera);
+}
+
+requestAnimationFrame(animate);
+
+window.addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(devicePixelRatio);
+});
+</script>
 </body>
 </html>
