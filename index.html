@@ -25,175 +25,158 @@ window.addEventListener('resize', resize);
 
 // ── Logo ──────────────────────────────────────────────────────────────────
 const logo = new Image();
-logo.crossOrigin = 'anonymous';
-logo.src = 'NewAngeles-01.png'; // blue on white — we'll colorize it
+logo.src = 'NewAngeles-02.png'; // blue on black
 
-// ── Layout ────────────────────────────────────────────────────────────────
-function getLayout() {
-  const W = canvas.width, H = canvas.height;
-  const padX = W * 0.08;
-  const logoAspect = 640 / 360;
-  const drawW = W - padX * 2;
-  const drawH = drawW / logoAspect;
-  const drawX = padX;
-  const drawY = (H - drawH) / 2;
-  return { W, H, drawX, drawY, drawW, drawH };
-}
+logo.onerror = function() {
+  // fallback: draw text so we know the canvas is working
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ff0000';
+  ctx.font = '40px sans-serif';
+  ctx.fillText('Logo failed to load', 50, canvas.height / 2);
+};
 
 // ── Sparks ────────────────────────────────────────────────────────────────
-const sparks = [];
+var sparks = [];
 function spawnSparks(x, y, n, burst) {
-  for (let i = 0; i < n; i++) {
+  for (var i = 0; i < n; i++) {
     sparks.push({
-      x, y,
+      x: x, y: y,
       vx: (Math.random() - 0.5) * (burst ? 5 : 2.5),
       vy: -(Math.random() * (burst ? 5 : 3) + 0.5),
       life: 1,
       decay: 0.013 + Math.random() * 0.02,
       r: burst ? (2 + Math.random() * 4) : (1 + Math.random() * 2.5),
-      hue: 200 + Math.random() * 45,
+      hue: 200 + Math.random() * 45
     });
   }
   while (sparks.length > 500) sparks.shift();
 }
 
 function tickSparks() {
-  for (let i = sparks.length - 1; i >= 0; i--) {
-    const s = sparks[i];
+  for (var i = sparks.length - 1; i >= 0; i--) {
+    var s = sparks[i];
     s.x += s.vx; s.y += s.vy; s.vy += 0.07;
     s.life -= s.decay;
     if (s.life <= 0) { sparks.splice(i, 1); continue; }
     ctx.save();
     ctx.globalAlpha = s.life * 0.95;
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = `hsl(${s.hue},100%,80%)`;
-    ctx.fillStyle = `hsl(${s.hue},100%,${55 + s.life * 45}%)`;
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = 'hsl(' + s.hue + ',100%,80%)';
+    ctx.fillStyle = 'hsl(' + s.hue + ',100%,' + (55 + s.life * 45) + '%)';
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, Math.max(0.1, s.r * s.life), 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 }
 
-// ── Main draw ─────────────────────────────────────────────────────────────
-const T_WRITE = 3000;
-const T_SHINE_END = T_WRITE + 900;
+// ── Layout ────────────────────────────────────────────────────────────────
+function getLayout() {
+  var W = canvas.width, H = canvas.height;
+  var padX = W * 0.08;
+  var logoAspect = logo.naturalWidth / logo.naturalHeight || (640/360);
+  var drawW = W - padX * 2;
+  var drawH = drawW / logoAspect;
+  var drawX = padX;
+  var drawY = (H - drawH) / 2;
+  return { W: W, H: H, drawX: drawX, drawY: drawY, drawW: drawW, drawH: drawH };
+}
 
-let t0 = null;
-let prevRX = null;
-let lastTwinkle = 0;
+// ── Neon glow (no ctx.filter — avoids taint/CORS issues) ─────────────────
+function drawNeonLogo(fraction, alpha) {
+  var l = getLayout();
+  var revealX = l.drawX + fraction * l.drawW;
+  var clipW = revealX - l.drawX;
+  if (clipW <= 0) return;
 
-function drawNeonLogo(revealFraction, pulseAlpha) {
-  const { W, H, drawX, drawY, drawW, drawH } = getLayout();
-  const revealX = drawX + revealFraction * drawW;
-
-  // Draw logo clipped to revealX
   ctx.save();
   ctx.beginPath();
-  ctx.rect(drawX, 0, revealX - drawX, H);
+  ctx.rect(l.drawX, 0, clipW, l.H);
   ctx.clip();
 
-  // Outer glow passes
-  const glows = [
-    { blur: 50, alpha: 0.15, color: '#0033ff' },
-    { blur: 25, alpha: 0.28, color: '#1144ff' },
-    { blur: 10, alpha: 0.55, color: '#2255ff' },
-    { blur: 3,  alpha: 0.80, color: '#4488ff' },
+  // Multiple shadow passes for glow (no filter needed)
+  var glowPasses = [
+    { alpha: 0.12, blur: 48 },
+    { alpha: 0.25, blur: 22 },
+    { alpha: 0.50, blur: 8  },
+    { alpha: alpha, blur: 0  },
   ];
 
-  for (const g of glows) {
+  for (var i = 0; i < glowPasses.length; i++) {
+    var g = glowPasses[i];
     ctx.save();
-    ctx.filter = `blur(${g.blur}px)`;
-    ctx.globalAlpha = pulseAlpha * g.alpha;
-    ctx.globalCompositeOperation = 'screen';
-    ctx.drawImage(logo, drawX, drawY, drawW, drawH);
+    ctx.shadowBlur = g.blur;
+    ctx.shadowColor = '#3366ff';
+    ctx.globalAlpha = g.alpha;
+    ctx.drawImage(logo, l.drawX, l.drawY, l.drawW, l.drawH);
     ctx.restore();
   }
 
-  // Core — normal render at full opacity
-  ctx.save();
-  ctx.globalAlpha = pulseAlpha;
-  ctx.drawImage(logo, drawX, drawY, drawW, drawH);
   ctx.restore();
-
-  ctx.restore();
-
-  return revealX;
 }
+
+// ── Animation ─────────────────────────────────────────────────────────────
+var T_WRITE = 3000;
+var T_SHINE_END = T_WRITE + 900;
+var t0 = null;
+var prevRX = -1;
+var lastTwinkle = 0;
+
+function ease(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
 
 function frame(ts) {
   requestAnimationFrame(frame);
-  if (!logo.complete || logo.naturalWidth === 0) return;
-  if (!t0) { t0 = ts; }
+  if (!logo.complete || !logo.naturalWidth) return;
 
-  const { W, H, drawX, drawY, drawW, drawH } = getLayout();
-  const el = ts - t0;
+  var l = getLayout();
+  if (!t0) t0 = ts;
+  var el = ts - t0;
 
-  // Black bg
+  // Background
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, l.W, l.H);
 
-  // Occasional bg flicker line (neon buzz)
+  // Scanline flicker
   if (Math.random() < 0.015) {
     ctx.save();
     ctx.globalAlpha = 0.04 + Math.random() * 0.04;
     ctx.fillStyle = '#2244ff';
-    ctx.fillRect(0, Math.random() * H, W, 1);
+    ctx.fillRect(0, Math.random() * l.H, l.W, 1);
     ctx.restore();
   }
 
   if (el < T_WRITE) {
-    // Write-on
-    const t = el / T_WRITE;
-    const eased = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-    const revealX = drawNeonLogo(eased, 1.0);
-
-    // Sparks at tip
-    if (prevRX === null || revealX - prevRX > 3) {
-      const sy = drawY + drawH * (0.2 + Math.random() * 0.6);
-      spawnSparks(revealX, sy, 2 + Math.floor(Math.random() * 3), false);
-      prevRX = revealX;
+    var t = ease(el / T_WRITE);
+    drawNeonLogo(t, 1.0);
+    var rx = l.drawX + t * l.drawW;
+    if (rx - prevRX > 3) {
+      spawnSparks(rx, l.drawY + l.drawH * (0.25 + Math.random() * 0.5), 2 + Math.floor(Math.random() * 3), false);
+      prevRX = rx;
     }
-
   } else if (el < T_SHINE_END) {
-    // Full reveal + shine sweep
     drawNeonLogo(1.0, 1.0);
-
-    const st = (el - T_WRITE) / (T_SHINE_END - T_WRITE);
-    const shineX = drawX - 100 + st * (drawW + 250);
-    const grad = ctx.createLinearGradient(shineX - 80, 0, shineX + 80, 0);
+    var st = (el - T_WRITE) / (T_SHINE_END - T_WRITE);
+    var shineX = l.drawX - 100 + st * (l.drawW + 250);
+    var grad = ctx.createLinearGradient(shineX - 80, 0, shineX + 80, 0);
     grad.addColorStop(0, 'rgba(255,255,255,0)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,0.45)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.4)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, l.W, l.H);
     ctx.restore();
-
     if (Math.random() < 0.45) {
-      spawnSparks(
-        drawX + Math.random() * drawW,
-        drawY + drawH * (0.15 + Math.random() * 0.7),
-        1 + Math.floor(Math.random() * 3),
-        Math.random() < 0.3
-      );
+      spawnSparks(l.drawX + Math.random() * l.drawW, l.drawY + l.drawH * (0.2 + Math.random() * 0.6), 1 + Math.floor(Math.random() * 3), Math.random() < 0.3);
     }
-
   } else {
-    // Breathing idle
-    const idle = el - T_SHINE_END;
-    const pulse = 0.86 + 0.14 * Math.sin(idle * 0.0017);
+    var idle = el - T_SHINE_END;
+    var pulse = 0.86 + 0.14 * Math.sin(idle * 0.0017);
     drawNeonLogo(1.0, pulse);
-
-    if (ts - lastTwinkle > 70 + Math.random() * 220) {
+    if (ts - lastTwinkle > 80 + Math.random() * 200) {
       lastTwinkle = ts;
-      spawnSparks(
-        drawX + drawW * (0.05 + Math.random() * 0.9),
-        drawY + drawH * (0.1 + Math.random() * 0.8),
-        1 + (Math.random() < 0.25 ? 3 : 0),
-        Math.random() < 0.2
-      );
+      spawnSparks(l.drawX + l.drawW * (0.05 + Math.random() * 0.9), l.drawY + l.drawH * (0.1 + Math.random() * 0.8), 1 + (Math.random() < 0.25 ? 3 : 0), Math.random() < 0.2);
     }
   }
 
