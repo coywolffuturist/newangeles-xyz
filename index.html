@@ -14,7 +14,6 @@
       height: 100vh;
     }
 
-    /* The logo layers — stacked via absolute positioning */
     .logo-layer {
       position: absolute;
       top: 50%;
@@ -26,30 +25,48 @@
       pointer-events: none;
     }
 
-    /* Reveal clip applied via JS */
+    /* Each layer is the WHITE-on-black version, colorized with CSS */
+
+    /* Outermost haze — wide blue fog */
+    #gl1 {
+      filter: blur(60px) invert(1) brightness(0.6)
+              sepia(1) saturate(8) hue-rotate(195deg);
+      opacity: 0.7;
+      mix-blend-mode: screen;
+    }
+    /* Mid glow */
+    #gl2 {
+      filter: blur(28px) invert(1) brightness(0.9)
+              sepia(1) saturate(10) hue-rotate(200deg);
+      opacity: 0.75;
+      mix-blend-mode: screen;
+    }
+    /* Tight corona */
+    #gl3 {
+      filter: blur(10px) invert(1) brightness(1.2)
+              sepia(1) saturate(12) hue-rotate(205deg);
+      opacity: 0.85;
+      mix-blend-mode: screen;
+    }
+    /* Hot inner core — near-white center */
+    #gl4 {
+      filter: blur(3px) invert(1) brightness(1.5)
+              sepia(1) saturate(6) hue-rotate(210deg);
+      opacity: 0.95;
+      mix-blend-mode: screen;
+    }
+    /* Crisp surface — very slight blue tint */
+    #gl5 {
+      filter: invert(1) brightness(1.0)
+              sepia(1) saturate(3) hue-rotate(210deg);
+      opacity: 1.0;
+      mix-blend-mode: screen;
+    }
+
     #clip-wrapper {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      overflow: hidden;
-    }
-
-    /* Glow layers */
-    #glow-outer {
-      filter: blur(28px) brightness(3) saturate(2);
-      opacity: 0.5;
-    }
-    #glow-mid {
-      filter: blur(10px) brightness(4) saturate(2);
-      opacity: 0.6;
-    }
-    #glow-inner {
-      filter: blur(3px) brightness(5) saturate(1.5);
-      opacity: 0.8;
-    }
-    #glow-core {
-      filter: brightness(2) saturate(1.2);
-      opacity: 1.0;
     }
 
     #sparkle-canvas {
@@ -58,28 +75,26 @@
       width: 100%; height: 100%;
       pointer-events: none;
     }
-
-    /* SVG defs for clip path */
-    #svg-defs { position: absolute; width: 0; height: 0; }
   </style>
 </head>
 <body>
 <div id="stage">
-  <!-- Glow layers stacked, each clipped by clip-wrapper -->
   <div id="clip-wrapper">
-    <img id="glow-outer" class="logo-layer" src="NewAngeles-02.png" alt="">
-    <img id="glow-mid"   class="logo-layer" src="NewAngeles-02.png" alt="">
-    <img id="glow-inner" class="logo-layer" src="NewAngeles-02.png" alt="">
-    <img id="glow-core"  class="logo-layer" src="NewAngeles-02.png" alt="">
+    <!-- All layers use white-on-black source (05) for CSS glow to work -->
+    <img id="gl1" class="logo-layer" src="NewAngeles-05.png" alt="">
+    <img id="gl2" class="logo-layer" src="NewAngeles-05.png" alt="">
+    <img id="gl3" class="logo-layer" src="NewAngeles-05.png" alt="">
+    <img id="gl4" class="logo-layer" src="NewAngeles-05.png" alt="">
+    <img id="gl5" class="logo-layer" src="NewAngeles-05.png" alt="">
   </div>
   <canvas id="sparkle-canvas"></canvas>
 </div>
 
 <script>
-var stage     = document.getElementById('stage');
-var wrapper   = document.getElementById('clip-wrapper');
-var sparkCvs  = document.getElementById('sparkle-canvas');
-var sctx      = sparkCvs.getContext('2d');
+var stage    = document.getElementById('stage');
+var wrapper  = document.getElementById('clip-wrapper');
+var sparkCvs = document.getElementById('sparkle-canvas');
+var sctx     = sparkCvs.getContext('2d');
 
 function resize() {
   sparkCvs.width  = window.innerWidth;
@@ -88,12 +103,11 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-// Wait for first image to load to get layout
-var logoImg = document.getElementById('glow-core');
+var refImg = document.getElementById('gl5');
 
-function getLogoRect() {
-  var r = logoImg.getBoundingClientRect();
-  return { x: r.left, y: r.top, w: r.width, h: r.height };
+function getLR() {
+  var r = refImg.getBoundingClientRect();
+  return { x:r.left, y:r.top, w:r.width, h:r.height };
 }
 
 // ── Sparks ─────────────────────────────────────────────────────────────────
@@ -102,19 +116,19 @@ function spawnSparks(x, y, n, burst) {
   for (var i=0; i<n; i++) {
     sparks.push({
       x:x, y:y,
-      vx:(Math.random()-0.5)*(burst?7:3),
-      vy:-(Math.random()*(burst?7:4)+0.5),
+      vx:(Math.random()-0.5)*(burst?8:3.5),
+      vy:-(Math.random()*(burst?8:4.5)+0.5),
       life:1,
-      decay:0.011+Math.random()*0.018,
-      r:burst?(3+Math.random()*5):(1.2+Math.random()*3),
-      hue:195+Math.random()*55
+      decay:0.01+Math.random()*0.017,
+      r:burst?(3+Math.random()*5.5):(1.5+Math.random()*3),
+      hue:195+Math.random()*60
     });
   }
   while(sparks.length>700) sparks.shift();
 }
 
 function tickSparks() {
-  sctx.clearRect(0, 0, sparkCvs.width, sparkCvs.height);
+  sctx.clearRect(0,0,sparkCvs.width,sparkCvs.height);
   for (var i=sparks.length-1; i>=0; i--) {
     var s=sparks[i];
     s.x+=s.vx; s.y+=s.vy; s.vy+=0.08;
@@ -123,14 +137,13 @@ function tickSparks() {
     var r=Math.max(0.5,s.r*s.life);
     sctx.save();
     sctx.globalAlpha=s.life;
-    sctx.shadowBlur=r>2?22:12;
-    sctx.shadowColor='hsl('+s.hue+',100%,85%)';
+    sctx.shadowBlur=r>2?24:12;
+    sctx.shadowColor='hsl('+s.hue+',100%,88%)';
     sctx.fillStyle='hsl('+s.hue+',100%,'+(50+s.life*50)+'%)';
     if(r>2.5){
       sctx.beginPath();
       for(var p=0;p<8;p++){
-        var a=p*Math.PI/4;
-        var rr=(p%2===0)?r:r*0.3;
+        var a=p*Math.PI/4, rr=(p%2===0)?r:r*0.28;
         p===0?sctx.moveTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr):sctx.lineTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr);
       }
       sctx.closePath();sctx.fill();
@@ -141,89 +154,84 @@ function tickSparks() {
   }
 }
 
-// ── Animation ──────────────────────────────────────────────────────────────
-var T_WRITE=3000, T_SHINE_END=T_WRITE+1000;
-var t0=null, lastTwinkle=0, prevRX=-1;
-function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}
-
-// Clip the wrapper to revealX (in viewport px)
+// ── Reveal + opacity ───────────────────────────────────────────────────────
 function setReveal(fraction) {
-  var lr = getLogoRect();
+  var lr = getLR();
   var revealPx = lr.x + fraction * lr.w;
-  // Clip the entire wrapper to left of revealPx
-  wrapper.style.clipPath = 'inset(0 '+(sparkCvs.width - revealPx)+'px 0 0)';
+  var rightClip = Math.max(0, sparkCvs.width - revealPx);
+  wrapper.style.clipPath = 'inset(0 '+rightClip+'px 0 0)';
 }
+
+var layers = ['gl1','gl2','gl3','gl4','gl5'];
+var baseOp = [0.7, 0.75, 0.85, 0.95, 1.0];
 
 function setOpacity(alpha) {
-  var gOuter = document.getElementById('glow-outer');
-  var gMid   = document.getElementById('glow-mid');
-  var gInner = document.getElementById('glow-inner');
-  var gCore  = document.getElementById('glow-core');
-  gOuter.style.opacity = (0.5 * alpha).toFixed(3);
-  gMid.style.opacity   = (0.6 * alpha).toFixed(3);
-  gInner.style.opacity = (0.8 * alpha).toFixed(3);
-  gCore.style.opacity  = (1.0 * alpha).toFixed(3);
+  for (var i=0; i<layers.length; i++) {
+    document.getElementById(layers[i]).style.opacity = (baseOp[i] * alpha).toFixed(3);
+  }
 }
 
-// Shine overlay
+// Shine overlay div
 var shineDiv = document.createElement('div');
-shineDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;mix-blend-mode:screen;';
+shineDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:0;';
 stage.appendChild(shineDiv);
 
-function setShine(x) {
-  if (x < 0) { shineDiv.style.opacity = '0'; return; }
+function setShine(frac) {
+  if (frac < 0) { shineDiv.style.opacity='0'; return; }
+  var lr = getLR();
+  var px = lr.x + frac * (lr.w + 200) - 100;
+  var pct = (px / sparkCvs.width * 100).toFixed(1);
   shineDiv.style.opacity = '1';
-  shineDiv.style.background = 'linear-gradient(to right, rgba(255,255,255,0) '+(x-8)+'%, rgba(255,255,255,0.55) '+x+'%, rgba(255,255,255,0) '+(x+8)+'%)';
+  shineDiv.style.background =
+    'linear-gradient(to right,rgba(255,255,255,0) '+(parseFloat(pct)-10)+'%,rgba(255,255,255,0.6) '+pct+'%,rgba(255,255,255,0) '+(parseFloat(pct)+10)+'%)';
 }
+
+// ── Animation ──────────────────────────────────────────────────────────────
+var T_WRITE=3000, T_SHINE_END=T_WRITE+1000;
+var t0=null, prevRX=-1, lastTwinkle=0;
+function ease(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}
 
 function frame(ts) {
   requestAnimationFrame(frame);
-  if (!logoImg.complete || !logoImg.naturalWidth) return;
-
-  var lr = getLogoRect();
-  if (lr.w === 0) return;
-  if (!t0) t0 = ts;
-  var el = ts - t0;
+  if (!refImg.complete || !refImg.naturalWidth) return;
+  var lr = getLR();
+  if (!lr.w) return;
+  if (!t0) t0=ts;
+  var el=ts-t0;
 
   tickSparks();
 
   if (el < T_WRITE) {
-    var t = ease(el / T_WRITE);
+    var t=ease(el/T_WRITE);
     setReveal(t);
     setOpacity(1.0);
     setShine(-1);
-
-    var rx = lr.x + t * lr.w;
-    if (rx - prevRX > 3) {
-      spawnSparks(rx, lr.y + lr.h*(0.2+Math.random()*0.6), 3+Math.floor(Math.random()*5), false);
-      prevRX = rx;
+    var rx=lr.x+t*lr.w;
+    if (rx-prevRX>3) {
+      spawnSparks(rx,lr.y+lr.h*(0.2+Math.random()*0.6),3+Math.floor(Math.random()*5),false);
+      prevRX=rx;
     }
-
   } else if (el < T_SHINE_END) {
     setReveal(1.0);
     setOpacity(1.0);
-    var st = (el-T_WRITE)/(T_SHINE_END-T_WRITE);
-    setShine(Math.round((lr.x/sparkCvs.width*100) + st*((lr.w)/sparkCvs.width*100 + 15)));
-    if (Math.random()<0.55) {
-      spawnSparks(lr.x+Math.random()*lr.w, lr.y+lr.h*(0.1+Math.random()*0.8), 2+Math.floor(Math.random()*5), Math.random()<0.35);
-    }
-
+    setShine((el-T_WRITE)/(T_SHINE_END-T_WRITE));
+    if(Math.random()<0.55) spawnSparks(lr.x+Math.random()*lr.w,lr.y+lr.h*(0.1+Math.random()*0.8),2+Math.floor(Math.random()*5),Math.random()<0.35);
   } else {
     setReveal(1.0);
     setShine(-1);
-    var idle = el - T_SHINE_END;
-    var flicker = Math.random()<0.004 ? (0.55+Math.random()*0.35) : 1.0;
-    var pulse = (0.78 + 0.22*Math.sin(idle*0.0018)) * flicker;
+    var idle=el-T_SHINE_END;
+    var flicker=Math.random()<0.005?(0.45+Math.random()*0.4):1.0;
+    var pulse=(0.78+0.22*Math.sin(idle*0.0018))*flicker;
     setOpacity(pulse);
-    if (ts-lastTwinkle > 70+Math.random()*230) {
-      lastTwinkle = ts;
-      spawnSparks(lr.x+lr.w*(0.05+Math.random()*0.9), lr.y+lr.h*(0.1+Math.random()*0.8), 1+(Math.random()<0.22?5:0), Math.random()<0.18);
+    if (ts-lastTwinkle>70+Math.random()*230) {
+      lastTwinkle=ts;
+      spawnSparks(lr.x+lr.w*(0.05+Math.random()*0.9),lr.y+lr.h*(0.1+Math.random()*0.8),1+(Math.random()<0.22?5:0),Math.random()<0.18);
     }
   }
 }
 
 window.addEventListener('load', function() {
-  wrapper.style.clipPath = 'inset(0 100% 0 0)';
+  wrapper.style.clipPath='inset(0 100% 0 0)';
   requestAnimationFrame(frame);
 });
 </script>
