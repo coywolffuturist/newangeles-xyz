@@ -155,25 +155,10 @@
     return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
   }
 
-  /* Animate all layers in sync — dashoffset controlled per-path across all layers */
-  function animateAll(startTs, duration, onDone) {
-    /* Use paths from first layer to get lengths */
-    var refPaths = Array.from(layers[0].querySelectorAll('path'));
-    var lengths  = refPaths.map(function(p) { return p.getTotalLength(); });
-    var total    = lengths.reduce(function(a,b){ return a+b; }, 0);
+  function animateAllWithLengths(lengths, total, startTs, duration, onDone) {
     var cumFracs = [];
     var cum = 0;
     lengths.forEach(function(l) { cumFracs.push(cum/total); cum += l; });
-
-    /* Init dasharray on all layers */
-    layers.forEach(function(g) {
-      var paths = g.querySelectorAll('path');
-      paths.forEach(function(p, i) {
-        p.style.strokeDasharray  = lengths[i];
-        p.style.strokeDashoffset = lengths[i];
-      });
-      g.style.opacity = g.getAttribute('opacity') || 1;
-    });
 
     function tick(ts) {
       var elapsed  = ts - startTs;
@@ -230,12 +215,26 @@
   }
 
   window.addEventListener('load', function() {
-    /* Hide all layers initially */
-    layers.forEach(function(g) { g.style.opacity = 0; });
+    /* Init dash arrays BEFORE hiding — getTotalLength() needs visible paths */
+    var refPaths = Array.from(layers[0].querySelectorAll('path'));
+    var lengths  = refPaths.map(function(p) { return p.getTotalLength(); });
+    var total    = lengths.reduce(function(a,b){ return a+b; }, 0);
+
+    /* Set dasharray on all layers, offset = full length (invisible) */
+    layers.forEach(function(g) {
+      var paths = g.querySelectorAll('path');
+      paths.forEach(function(p, i) {
+        p.style.strokeDasharray  = lengths[i];
+        p.style.strokeDashoffset = lengths[i];
+      });
+    });
+
+    /* Now hide layers — color shows via opacity on each g's base attribute */
+    /* Don't set opacity:0 on the g — that hides the glow. Instead the full dashoffset hides it */
 
     requestAnimationFrame(function(ts) {
       requestAnimationFrame(frame);
-      animateAll(ts, 17500, function() {
+      animateAllWithLengths(lengths, total, ts, 17500, function() {
         pulseActive = true;
         pulseStart  = performance.now();
       });
