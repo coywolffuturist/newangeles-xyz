@@ -119,7 +119,8 @@ window.addEventListener('resize', resize);
 
 function mapPt(px, py){
   var r = logoSvg.getBoundingClientRect();
-  return [r.left + (px/640)*r.width, r.top + (py/360)*r.height];
+  // Stroke coords are in 4000x2251 space (scaled from 640x360 PNG)
+  return [r.left + (px/4000)*r.width, r.top + (py/2251)*r.height];
 }
 
 function strokeW(){
