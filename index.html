@@ -119,20 +119,19 @@
       var idle    = performance.now() - pulseStart;
       var flicker = Math.random() < 0.004 ? (0.45 + Math.random() * 0.4) : 1.0;
       var pulse   = (0.78 + 0.22 * Math.sin(idle * 0.0018)) * flicker;
-      svg.style.opacity = pulse.toFixed(3);
+      g.style.opacity = pulse.toFixed(3);
     }
   }
 
   window.addEventListener('load', function() {
-    /* Simple fade-in over 2s, then breathing pulse */
-    svg.style.opacity = '0';
-    svg.style.transition = 'opacity 2s ease';
+    /* Fade in the logo group, then breathing pulse */
+    g.style.transition = 'opacity 2s ease';
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        svg.style.opacity = '1';
+        g.style.opacity = '1';
         requestAnimationFrame(frame);
         setTimeout(function() {
-          svg.style.transition = '';
+          g.style.transition = '';
           pulseActive = true;
           pulseStart  = performance.now();
         }, 2000);
