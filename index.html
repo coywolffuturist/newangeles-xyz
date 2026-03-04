@@ -159,10 +159,10 @@
     /* Restore each layer to its natural opacity */
     layers.forEach(function(g) {
       var nat = parseFloat(g.getAttribute('opacity')) || 1;
-      g.style.transition = 'opacity 2s ease';
+      g.style.transition = 'opacity 5s ease';
       g.style.opacity    = nat;
     });
-    setTimeout(onDone, 2000);
+    setTimeout(onDone, 5000);
   }
 
   var pulseActive = false;
