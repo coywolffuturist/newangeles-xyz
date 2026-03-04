@@ -124,7 +124,7 @@ function mapPt(px, py){
 }
 
 function strokeW(){
-  return Math.max(1.5, logoSvg.getBoundingClientRect().width * 0.009);
+  return Math.max(4, logoSvg.getBoundingClientRect().width * 0.020);
 }
 
 function buildTimings(strokes){
@@ -221,7 +221,7 @@ window.addEventListener('load', function(){
   }
 
   var timing = buildTimings(STROKES);
-  var WRITE_DUR = 3800;   // ms to write
+  var WRITE_DUR = 4500;   // ms to write
   var HOLD_DUR  = 400;    // ms to hold writing before crossfade
   var FADE_DUR  = 1000;   // ms crossfade
   var writeStart = null;
