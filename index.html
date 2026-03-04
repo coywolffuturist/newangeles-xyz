@@ -124,7 +124,8 @@ function mapPt(px, py){
 }
 
 function strokeW(){
-  return Math.max(4, logoSvg.getBoundingClientRect().width * 0.020);
+  // Match the visual thickness of the neon logo strokes
+  return Math.max(3, logoSvg.getBoundingClientRect().width * 0.013);
 }
 
 function buildTimings(strokes){
@@ -166,24 +167,30 @@ function drawWrite(strokes, progress, timing){
     }
     var sw=strokeW();
     wctx.lineCap='round'; wctx.lineJoin='round';
-    // Glow
-    wctx.shadowBlur=sw*10; wctx.shadowColor='rgba(50,120,255,0.7)';
-    wctx.strokeStyle='rgba(70,140,255,0.35)'; wctx.lineWidth=sw*4;
+    // Wide outer glow halo
+    wctx.shadowBlur=sw*12; wctx.shadowColor='rgba(30,80,255,0.8)';
+    wctx.strokeStyle='rgba(50,110,255,0.25)'; wctx.lineWidth=sw*6;
     wctx.beginPath(); wctx.moveTo(drawPts[0][0],drawPts[0][1]);
     for(var k=1;k<drawPts.length;k++) wctx.lineTo(drawPts[k][0],drawPts[k][1]);
     wctx.stroke();
-    // Core
-    wctx.shadowBlur=sw*3; wctx.shadowColor='rgba(140,200,255,1)';
-    wctx.strokeStyle='rgba(200,230,255,0.98)'; wctx.lineWidth=sw*0.9;
+    // Mid glow
+    wctx.shadowBlur=sw*5; wctx.shadowColor='rgba(80,160,255,0.9)';
+    wctx.strokeStyle='rgba(100,180,255,0.6)'; wctx.lineWidth=sw*2.5;
     wctx.beginPath(); wctx.moveTo(drawPts[0][0],drawPts[0][1]);
     for(var k=1;k<drawPts.length;k++) wctx.lineTo(drawPts[k][0],drawPts[k][1]);
     wctx.stroke();
-    // Tip spark
+    // Bright core
+    wctx.shadowBlur=sw*2; wctx.shadowColor='rgba(200,230,255,1)';
+    wctx.strokeStyle='rgba(220,240,255,1)'; wctx.lineWidth=sw*0.8;
+    wctx.beginPath(); wctx.moveTo(drawPts[0][0],drawPts[0][1]);
+    for(var k=1;k<drawPts.length;k++) wctx.lineTo(drawPts[k][0],drawPts[k][1]);
+    wctx.stroke();
+    // Small tip glow only (no big dot)
     if(drawPts.length>0){
       var tip=drawPts[drawPts.length-1];
-      wctx.shadowBlur=sw*8; wctx.shadowColor='#fff';
-      wctx.fillStyle='#fff';
-      wctx.beginPath(); wctx.arc(tip[0],tip[1],sw*1.4,0,Math.PI*2); wctx.fill();
+      wctx.shadowBlur=sw*4; wctx.shadowColor='rgba(255,255,255,0.9)';
+      wctx.fillStyle='rgba(255,255,255,0.9)';
+      wctx.beginPath(); wctx.arc(tip[0],tip[1],sw*0.7,0,Math.PI*2); wctx.fill();
     }
     cum+=sLen;
   }
@@ -221,9 +228,9 @@ window.addEventListener('load', function(){
   }
 
   var timing = buildTimings(STROKES);
-  var WRITE_DUR = 4500;   // ms to write
-  var HOLD_DUR  = 400;    // ms to hold writing before crossfade
-  var FADE_DUR  = 1000;   // ms crossfade
+  var WRITE_DUR = 8000;   // ms to write — slow, deliberate pen stroke
+  var HOLD_DUR  = 600;    // ms to hold writing before crossfade
+  var FADE_DUR  = 1200;   // ms crossfade
   var writeStart = null;
 
   function loop(ts){
