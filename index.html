@@ -264,51 +264,66 @@
   }
 
   window.addEventListener('load', function() {
-    /* Animate the two master paths; <use> elements mirror dashoffset automatically */
-    var pNew = document.getElementById('p-new-fog');
-    var pAng = document.getElementById('p-ang-fog');
+    /* <use> doesn't propagate dashoffset in Chrome — clone real paths into each layer */
+    var layers = Array.from(svg.querySelectorAll('g.gl'));
+    var pNewOrig = document.getElementById('p-new-fog');
+    var pAngOrig = document.getElementById('p-ang-fog');
+    var lenNew = pNewOrig.getTotalLength();
+    var lenAng = pAngOrig.getTotalLength();
 
-    var lenNew = pNew.getTotalLength();
-    var lenAng = pAng.getTotalLength();
+    /* Replace each <use> with a real cloned <path> */
+    layers.forEach(function(g) {
+      Array.from(g.querySelectorAll('use')).forEach(function(u) {
+        var src = document.getElementById(u.getAttribute('href').replace('#',''));
+        if (src) {
+          var clone = src.cloneNode(true);
+          clone.removeAttribute('id');
+          g.appendChild(clone);
+        }
+        g.removeChild(u);
+      });
+    });
 
-    /* Init — fully hidden */
-    pNew.style.strokeDasharray  = lenNew;
-    pNew.style.strokeDashoffset = lenNew;
-    pAng.style.strokeDasharray  = lenAng;
-    pAng.style.strokeDashoffset = lenAng;
+    /* Collect all new/ang paths across every layer */
+    var allPaths = Array.from(svg.querySelectorAll('path'));
+    var newPaths = allPaths.filter(function(p){ return (p.getAttribute('d')||'').indexOf('M 72')>=0; });
+    var angPaths = allPaths.filter(function(p){ return (p.getAttribute('d')||'').indexOf('M 62')>=0; });
+
+    function setDash(paths, len, offset) {
+      paths.forEach(function(p){
+        p.style.strokeDasharray  = len;
+        p.style.strokeDashoffset = offset;
+      });
+    }
+
+    setDash(newPaths, lenNew, lenNew);
+    setDash(angPaths, lenAng, lenAng);
 
     var DURATION = 17500;
-    var OVERLAP  = 1500; /* Angeles starts 1.5s before New finishes */
     var tNew, tAng;
 
     requestAnimationFrame(function(ts) {
       tNew = ts;
       requestAnimationFrame(frame);
 
-      /* Animate "New" */
       (function tickNew(ts) {
-        var elapsed  = ts - tNew;
-        var progress = Math.max(0, Math.min(1, elapsed / (DURATION * 0.4)));
-        pNew.style.strokeDashoffset = lenNew * (1 - easeInOut(progress));
+        var e = ts - tNew;
+        var p = Math.max(0, Math.min(1, e / (DURATION * 0.4)));
+        setDash(newPaths, lenNew, lenNew * (1 - easeInOut(p)));
 
-        /* Start "Angeles" after overlap point */
-        if (!tAng && elapsed >= DURATION * 0.4 - OVERLAP) {
+        if (!tAng && e >= DURATION * 0.4 - 1500) {
           tAng = ts;
           (function tickAng(ts2) {
             var e2 = ts2 - tAng;
             var p2 = Math.max(0, Math.min(1, e2 / (DURATION * 0.6)));
-            pAng.style.strokeDashoffset = lenAng * (1 - easeInOut(p2));
+            setDash(angPaths, lenAng, lenAng * (1 - easeInOut(p2)));
             if (p2 < 1) requestAnimationFrame(tickAng);
-            else {
-              pAng.style.strokeDashoffset = 0;
-              pulseActive = true;
-              pulseStart  = performance.now();
-            }
+            else { setDash(angPaths,lenAng,0); pulseActive=true; pulseStart=performance.now(); }
           })(ts);
         }
 
-        if (progress < 1) requestAnimationFrame(tickNew);
-        else pNew.style.strokeDashoffset = 0;
+        if (p < 1) requestAnimationFrame(tickNew);
+        else setDash(newPaths, lenNew, 0);
       })(ts);
     });
   });
